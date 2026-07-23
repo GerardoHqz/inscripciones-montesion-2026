@@ -1,4 +1,4 @@
-﻿import { RefreshCw, AlertCircle, FileText } from "lucide-react";
+import { RefreshCw, AlertCircle, FileText } from "lucide-react";
 import { Registro } from "../../types";
 
 interface Props {
@@ -7,9 +7,10 @@ interface Props {
   error: string | null;
   onSelect: (r: Registro) => void;
   onRetry: () => void;
+  tabActiva: 'activas' | 'solicitudes';
 }
 
-export function RegistrosTable({ registros, loading, error, onSelect, onRetry }: Props) {
+export function RegistrosTable({ registros, loading, error, onSelect, onRetry, tabActiva }: Props) {
   if (loading) return (
     <div className="p-12 flex flex-col items-center justify-center gap-2 text-muted-foreground">
       <RefreshCw className="w-8 h-8 animate-spin text-primary" />
@@ -33,28 +34,32 @@ export function RegistrosTable({ registros, loading, error, onSelect, onRetry }:
   );
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto overflow-y-auto max-h-[580px] relative">
       <table className="w-full text-left border-collapse text-sm">
-        <thead>
-          <tr className="bg-muted/50 border-b border-border text-muted-foreground uppercase text-[10px] font-bold tracking-widest">
-            <th className="py-3.5 px-4">Campamentero</th>
-            <th className="py-3.5 px-4">Edad</th>
-            <th className="py-3.5 px-4 text-center">Talla</th>
-            <th className="py-3.5 px-4">DUI / Pasaporte</th>
-            <th className="py-3.5 px-4">Celular</th>
-            <th className="py-3.5 px-4 text-center">Tipo Pago</th>
-            <th className="py-3.5 px-4 text-right">Registro</th>
+        <thead className="sticky top-0 z-10 bg-slate-50 shadow-xs border-b border-border">
+          <tr className="text-muted-foreground uppercase text-[10px] font-bold tracking-widest">
+            <th className="py-3.5 px-4 bg-slate-50">Campamentero</th>
+            <th className="py-3.5 px-4 bg-slate-50">Edad</th>
+            <th className="py-3.5 px-4 text-center bg-slate-50">Talla</th>
+            <th className="py-3.5 px-4 bg-slate-50">DUI / Pasaporte</th>
+            <th className="py-3.5 px-4 bg-slate-50">Celular</th>
+            {tabActiva === "activas" ? (
+              <th className="py-3.5 px-4 text-left bg-slate-50">Facturación</th>
+            ) : (
+              <th className="py-3.5 px-4 text-center bg-slate-50">Estado</th>
+            )}
+            <th className="py-3.5 px-4 text-right bg-slate-50">Registro</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-[#e5e7eb]">
           {registros.map((reg) => (
             <tr key={reg.id} onClick={() => onSelect(reg)} className="hover:bg-muted/30 active:bg-muted/50 cursor-pointer transition-colors">
               <td className="py-3.5 px-4 font-bold text-foreground">
-                {reg.primer_nombre} {reg.segundo_nombre || ""} {reg.apellidos}
+                {reg.primer_nombre} {reg.segundo_nombre || ""} {reg.primer_apellido} {reg.segundo_apellido || ""}
                 <span className="block font-normal text-[10px] text-muted-foreground capitalize">{reg.genero}</span>
               </td>
               <td className="py-3.5 px-4">
-                {reg.edad} anos
+                {reg.edad} años
                 {reg.edad < 18 ? (
                   <span className="ml-1.5 inline-block text-[9px] font-black uppercase bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">Menor</span>
                 ) : (
@@ -62,15 +67,23 @@ export function RegistrosTable({ registros, loading, error, onSelect, onRetry }:
                 )}
               </td>
               <td className="py-3.5 px-4 text-center font-semibold text-foreground">{reg.talla_camisa || "-"}</td>
-              <td className="py-3.5 px-4 font-mono text-xs">{reg.dui_pasaporte}</td>
+              <td className="py-3.5 px-4 font-mono text-xs"><span className="text-[10px] font-bold text-muted-foreground mr-1">{reg.tipo_documento}:</span>{reg.numero_documento}</td>
               <td className="py-3.5 px-4">{reg.celular}</td>
-              <td className="py-3.5 px-4 text-center">
-                <span className={`inline-block text-[10px] font-bold capitalize px-2 py-0.5 rounded-full ${reg.tipo_pago === "completo" ? "bg-secondary/10 text-secondary border border-secondary/20" : "bg-amber-500/10 text-amber-700 border border-amber-500/20"}`}>
-                  {reg.tipo_pago}
-                </span>
-              </td>
+              {tabActiva === "activas" ? (
+                <td className="py-3.5 px-4 text-left">
+                  <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full ${reg.tipo_pago === "completo" ? "bg-secondary/10 text-secondary border border-secondary/20" : "bg-amber-500/10 text-amber-700 border border-amber-500/20"}`}>
+                    {reg.tipo_pago === "completo" ? "Pago Completo" : reg.tipo_pago === "medio pago" ? "Medio Pago" : reg.tipo_pago}
+                  </span>
+                </td>
+              ) : (
+                <td className="py-3.5 px-4 text-center">
+                  <span className="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 border border-amber-500/20">
+                    Sin Pago
+                  </span>
+                </td>
+              )}
               <td className="py-3.5 px-4 text-right text-muted-foreground text-xs font-mono">
-                {new Date(reg.created_at).toLocaleDateString()}
+                {reg.created_at ? new Date(reg.created_at).toLocaleDateString() : "-"}
               </td>
             </tr>
           ))}

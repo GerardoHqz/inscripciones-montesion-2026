@@ -1,32 +1,45 @@
-﻿/// <reference types="vite/client" />
+/// <reference types="vite/client" />
 import { useState } from "react";
-import { ChevronLeft, RefreshCw } from "lucide-react";
+import { ChevronLeft, RefreshCw, LogOut, Download, FileSpreadsheet } from "lucide-react";
 import { useRegistros } from "../../hooks/useRegistros";
 import { MetricCards } from "./MetricCards";
 import { FilterBar } from "./FilterBar";
 import { RegistrosTable } from "./RegistrosTable";
 import { RegistroModal } from "./RegistroModal";
 import { PrintArea } from "./PrintArea";
+import { AdminUser } from "../App";
+import * as XLSX from "xlsx";
+import { Registro } from "../../types";
 
-export default function DashboardPage() {
+interface DashboardProps {
+  onLogout: () => void;
+  adminUser: AdminUser;
+}
+
+export default function DashboardPage({ onLogout, adminUser }: DashboardProps) {
   const {
     registros, loading, error, fetchRegistros,
     selected, setSelected,
     isEditing, isSaving, saveError, editForm,
     handleInputChange, handleStartEdit, handleCancelEdit, handleSaveEdit,
-  } = useRegistros();
+    confirmarPago,
+  } = useRegistros(adminUser.token);
 
+  const [tabActiva, setTabActiva] = useState<"activas" | "solicitudes">("activas");
   const [search, setSearch] = useState("");
   const [filtroPago, setFiltroPago] = useState("todos");
   const [filtroGenero, setFiltroGenero] = useState("todos");
   const [filtroEdad, setFiltroEdad] = useState("todos");
   const [filtroTalla, setFiltroTalla] = useState("todos");
-
+ 
   const registrosFiltrados = registros.filter((reg) => {
-    const nombre = `${reg.primer_nombre} ${reg.segundo_nombre || ""} ${reg.apellidos}`.toLowerCase();
+    const matchTab = tabActiva === "activas" ? reg.tipo_pago !== null : reg.tipo_pago === null;
+    if (!matchTab) return false;
+
+    const nombre = `${reg.primer_nombre} ${reg.segundo_nombre || ""} ${reg.primer_apellido} ${reg.segundo_apellido || ""}`.toLowerCase();
     const q = search.toLowerCase();
-    const matchSearch = nombre.includes(q) || reg.dui_pasaporte.toLowerCase().includes(q) || reg.celular.includes(q);
-    const matchPago = filtroPago === "todos" || reg.tipo_pago === filtroPago;
+    const matchSearch = nombre.includes(q) || reg.numero_documento.toLowerCase().includes(q) || reg.celular.includes(q);
+    const matchPago = tabActiva === "solicitudes" || filtroPago === "todos" || reg.tipo_pago === filtroPago;
     const matchGenero = filtroGenero === "todos" || reg.genero === filtroGenero;
     const matchEdad = filtroEdad === "todos" ? true : filtroEdad === "menores" ? reg.edad < 18 : reg.edad >= 18;
     const matchTalla = filtroTalla === "todos" || (reg.talla_camisa || "").trim().toUpperCase() === filtroTalla.toUpperCase();
@@ -36,6 +49,86 @@ export default function DashboardPage() {
   const goHome = () => {
     window.history.pushState({}, "", "/");
     window.dispatchEvent(new PopStateEvent("popstate"));
+  };
+
+  const handleDownloadRawData = () => {
+    const dataToExport = registrosFiltrados.map((reg) => ({
+      "ID": reg.id,
+      "Fecha Registro": reg.created_at ? new Date(reg.created_at).toLocaleString() : "",
+      "Primer Nombre": reg.primer_nombre,
+      "Segundo Nombre": reg.segundo_nombre || "",
+      "Primer Apellido": reg.primer_apellido,
+      "Segundo Apellido": reg.segundo_apellido || "",
+      "Nacionalidad": reg.nacionalidad,
+      "Fecha Nacimiento": reg.fecha_nacimiento,
+      "Edad": reg.edad,
+      "Género": reg.genero,
+      "Talla Camisa": reg.talla_camisa || "",
+      "Tipo Documento": reg.tipo_documento,
+      "Número Documento": reg.numero_documento,
+      "Fecha Vencimiento Documento": reg.fecha_vencimiento_documento || "",
+      "Celular": reg.celular,
+      "Tipo Pago": reg.tipo_pago || "",
+      "Contacto 1 Nombres": reg.contacto1_nombres,
+      "Contacto 1 Apellidos": reg.contacto1_apellidos,
+      "Contacto 1 Relación": reg.contacto1_relacion,
+      "Contacto 1 Teléfono": reg.contacto1_telefono,
+      "Contacto 2 Nombres": reg.contacto2_nombres || "",
+      "Contacto 2 Apellidos": reg.contacto2_apellidos || "",
+      "Contacto 2 Relación": reg.contacto2_relacion || "",
+      "Contacto 2 Teléfono": reg.contacto2_telefono || "",
+      "Emergencia Nombres": reg.emergencia_nombres,
+      "Emergencia Apellidos": reg.emergencia_apellidos,
+      "Emergencia Relación": reg.emergencia_relacion,
+      "Emergencia Teléfono": reg.emergencia_telefono,
+      "Enfermedades": reg.enfermedades || "",
+      "Tratamiento Enfermedades": reg.tratamiento_enfermedades || "",
+      "Alergias": reg.alergias || "",
+      "Tratamiento Alergias": reg.tratamiento_alergias || "",
+      "Declarante Nombre": reg.declarante_nombre,
+      "Declarante DUI": reg.declarante_dui,
+      "Acepta Términos": reg.acepta_terminos ? "Sí" : "No",
+      "Firma URL": reg.firma_url,
+      "Número Factura": reg.numero_factura || "",
+      "Usuario Actualización": reg.user_ultima_actualizacion || ""
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Inscripciones Activas");
+    XLSX.writeFile(workbook, "Inscripciones_Activas_Completo_2026.xlsx");
+  };
+
+  const handleDownloadMigration = () => {
+    const dataToExport = registrosFiltrados.map((reg) => {
+      const obsParts: string[] = [];
+      if (reg.enfermedades) {
+        obsParts.push(`Enfermedades: ${reg.enfermedades}${reg.tratamiento_enfermedades ? ` (Tratamiento: ${reg.tratamiento_enfermedades})` : ''}`);
+      }
+      if (reg.alergias) {
+        obsParts.push(`Alergias: ${reg.alergias}${reg.tratamiento_alergias ? ` (Tratamiento: ${reg.tratamiento_alergias})` : ''}`);
+      }
+      const observaciones = obsParts.join(" | ");
+
+      return {
+        "Nombres 1": reg.primer_nombre,
+        "Nombre 2": reg.segundo_nombre || "",
+        "Apellido1": reg.primer_apellido,
+        "Apellido2": reg.segundo_apellido || "",
+        "Nacionalidad": reg.nacionalidad,
+        "Fecha de Nacimiento": reg.fecha_nacimiento,
+        "Sexo": reg.genero,
+        "Tipo Documento": reg.tipo_documento,
+        "Número de Documento": reg.numero_documento,
+        "Fecha de Vencimiento": reg.fecha_vencimiento_documento || "",
+        "Observaciones": observaciones
+      };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Migración");
+    XLSX.writeFile(workbook, "Inscripciones_Activas_Migracion_2026.xlsx");
   };
 
   return (
@@ -61,14 +154,19 @@ export default function DashboardPage() {
               <p className="text-xs opacity-75 uppercase tracking-wider font-semibold">Monte Sion 2026 - Taber x Jev</p>
             </div>
           </div>
-          <button onClick={fetchRegistros} disabled={loading} className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 active:bg-white/30 rounded-lg text-sm font-semibold transition-all">
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Actualizar datos
-          </button>
+          <div className="flex items-center gap-3">
+            <button onClick={fetchRegistros} disabled={loading} className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 active:bg-white/30 rounded-lg text-sm font-semibold transition-all">
+              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Actualizar datos
+            </button>
+            <button onClick={onLogout} className="p-2 bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-lg transition-all cursor-pointer text-white shadow-sm flex items-center justify-center" title="Cerrar sesión">
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 mt-6 no-print">
-        <MetricCards registros={registros} />
+        <MetricCards registros={registros} rol={adminUser.rol} />
 
         <FilterBar
           search={search} setSearch={setSearch}
@@ -78,6 +176,68 @@ export default function DashboardPage() {
           filtroTalla={filtroTalla} setFiltroTalla={setFiltroTalla}
         />
 
+        {/* Pestañas de Navegación del Dashboard y Botones de Descarga */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-[#e5e7eb] mb-6 gap-4 no-print mt-4">
+          <div className="flex gap-6">
+            <button
+              onClick={() => setTabActiva("activas")}
+              className={`pb-3 text-sm font-bold tracking-wide relative transition-colors cursor-pointer ${
+                tabActiva === "activas"
+                  ? "text-primary border-b-2 border-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Inscripciones Activas
+              {registros.filter(r => r.tipo_pago !== null).length > 0 && (
+                <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary font-bold">
+                  {registros.filter(r => r.tipo_pago !== null).length}
+                </span>
+              )}
+            </button>
+            {adminUser.rol === "admin" && (
+              <button
+                onClick={() => setTabActiva("solicitudes")}
+                className={`pb-3 text-sm font-bold tracking-wide relative transition-colors cursor-pointer ${
+                  tabActiva === "solicitudes"
+                    ? "text-amber-600 border-b-2 border-amber-600"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Solicitudes de Inscripción
+                {registros.filter(r => r.tipo_pago === null).length > 0 && (
+                  <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-amber-500/10 text-amber-600 font-bold">
+                    {registros.filter(r => r.tipo_pago === null).length}
+                  </span>
+                )}
+              </button>
+            )}
+          </div>
+
+          {/* Botones de Descarga Excel (Solo para Inscripciones Activas) */}
+          {tabActiva === "activas" && (
+            <div className="flex items-center gap-2 pb-2 sm:pb-0">
+              <button
+                onClick={handleDownloadRawData}
+                disabled={loading || registrosFiltrados.length === 0}
+                className="flex items-center gap-1.5 px-3 py-1.5 border border-emerald-600/30 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed active:bg-emerald-200/80 rounded-lg text-xs font-semibold transition-all cursor-pointer shadow-sm"
+                title="Descargar todos los campos de base de datos de los registros activos"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Descargar Data
+              </button>
+              <button
+                onClick={handleDownloadMigration}
+                disabled={loading || registrosFiltrados.length === 0}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed active:bg-emerald-800 text-white rounded-lg text-xs font-semibold transition-all cursor-pointer shadow"
+                title="Descargar excel formateado para la migración"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+                Descargar Migración
+              </button>
+            </div>
+          )}
+        </div>
+
         <section className="bg-white rounded-xl border border-[#e5e7eb] shadow-sm overflow-hidden">
           <RegistrosTable
             registros={registrosFiltrados}
@@ -85,6 +245,7 @@ export default function DashboardPage() {
             error={error}
             onSelect={setSelected}
             onRetry={fetchRegistros}
+            tabActiva={tabActiva}
           />
         </section>
       </main>
@@ -102,6 +263,8 @@ export default function DashboardPage() {
           onSaveEdit={handleSaveEdit}
           onClose={() => { setSelected(null); }}
           onPrint={() => window.print()}
+          onConfirmarPago={confirmarPago}
+          rol={adminUser.rol}
         />
       )}
 

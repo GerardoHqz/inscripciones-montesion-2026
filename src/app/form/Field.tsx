@@ -1,4 +1,4 @@
-﻿import { AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 
 interface FieldProps {
   label: string;
@@ -18,13 +18,8 @@ export function Field({
 }: FieldProps) {
   return (
     <div className={`flex flex-col gap-1 ${className}`}>
-      <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex justify-between items-center">
-        <span>{label}{required && <span className="text-red-500 ml-0.5">*</span>}</span>
-        {error && (
-          <span className="text-destructive text-[10px] lowercase first-letter:uppercase font-semibold flex items-center gap-0.5 animate-in fade-in slide-in-from-top-1 duration-200">
-            <AlertCircle className="w-3.5 h-3.5" /> {error}
-          </span>
-        )}
+      <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        {label}{required && <span className="text-red-500 ml-0.5">*</span>}
       </label>
       <input
         type={type}
@@ -38,6 +33,11 @@ export function Field({
             : "border-border focus:ring-primary/40 focus:border-primary"
         }`}
       />
+      {error && (
+        <span className="text-destructive text-[11px] font-semibold flex items-center gap-1 mt-0.5 animate-in fade-in slide-in-from-top-1 duration-200">
+          <AlertCircle className="w-3.5 h-3.5" /> {error}
+        </span>
+      )}
     </div>
   );
 }

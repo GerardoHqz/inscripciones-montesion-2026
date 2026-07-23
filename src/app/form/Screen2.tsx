@@ -1,6 +1,8 @@
-﻿import { FormData } from "../../types";
+import { FormData } from "../../types";
 import { Field } from "./Field";
 import { SectionTitle } from "./SectionTitle";
+import { Autocomplete } from "./Autocomplete";
+import { relaciones } from "../../utils/constants";
 
 interface Props {
   data: FormData;
@@ -26,7 +28,16 @@ export function Screen2({ data, onChange, esMayor, errors }: Props) {
           <Field label="Apellidos" name="contacto1Apellidos" value={data.contacto1Apellidos} onChange={handle} required error={errors.contacto1Apellidos} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Relacion con el campamentero/a" name="contacto1Relacion" value={data.contacto1Relacion} onChange={handle} required error={errors.contacto1Relacion} />
+          <Autocomplete
+            label="Relacion con el campamentero/a"
+            name="contacto1Relacion"
+            value={data.contacto1Relacion}
+            onChange={onChange}
+            options={relaciones}
+            required
+            error={errors.contacto1Relacion}
+            placeholder="Ej. Padre, Madre..."
+          />
           <Field label="Telefono Celular" name="contacto1Telefono" value={data.contacto1Telefono} onChange={handle} type="tel" placeholder="0000-0000" required error={errors.contacto1Telefono} />
         </div>
       </div>
@@ -39,7 +50,15 @@ export function Screen2({ data, onChange, esMayor, errors }: Props) {
             <Field label="Apellidos" name="contacto2Apellidos" value={data.contacto2Apellidos} onChange={handle} error={errors.contacto2Apellidos} />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Relacion con el campamentero/a" name="contacto2Relacion" value={data.contacto2Relacion} onChange={handle} error={errors.contacto2Relacion} />
+            <Autocomplete
+              label="Relacion con el campamentero/a"
+              name="contacto2Relacion"
+              value={data.contacto2Relacion}
+              onChange={onChange}
+              options={relaciones}
+              error={errors.contacto2Relacion}
+              placeholder="Ej. Tío, Hermano..."
+            />
             <Field label="Telefono Celular" name="contacto2Telefono" value={data.contacto2Telefono} onChange={handle} type="tel" placeholder="0000-0000" error={errors.contacto2Telefono} />
           </div>
         </div>

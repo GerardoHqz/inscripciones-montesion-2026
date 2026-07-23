@@ -1,4 +1,4 @@
-﻿import { User, Users, AlertCircle, FileText, PenLine } from "lucide-react";
+import { User, Users, AlertCircle, FileText, PenLine } from "lucide-react";
 
 // ─── Registro (Dashboard) ─────────────────────────────────────────────────────
 
@@ -7,14 +7,18 @@ export interface Registro {
   created_at: string;
   primer_nombre: string;
   segundo_nombre: string | null;
-  apellidos: string;
-  genero: string;
+  primer_apellido: string;
+  segundo_apellido: string | null;
+  nacionalidad: string;
   fecha_nacimiento: string;
   edad: number;
+  genero: string;
   talla_camisa: string | null;
-  dui_pasaporte: string;
+  tipo_documento: 'DUI' | 'PASAPORTE';
+  numero_documento: string;
+  fecha_vencimiento_documento: string | null;
   celular: string;
-  tipo_pago: string;
+  tipo_pago: 'completo' | 'medio pago' | null;
   contacto1_nombres: string;
   contacto1_apellidos: string;
   contacto1_relacion: string;
@@ -35,6 +39,8 @@ export interface Registro {
   declarante_dui: string;
   acepta_terminos: boolean;
   firma_url: string;
+  numero_factura: string | null;
+  user_ultima_actualizacion?: string | null;
 }
 
 // ─── FormData (Inscripcion) ───────────────────────────────────────────────────
@@ -42,12 +48,16 @@ export interface Registro {
 export interface FormData {
   primerNombre: string;
   segundoNombre: string;
-  apellidos: string;
-  genero: "Masculino" | "Femenino" | "";
+  primerApellido: string;
+  segundoApellido: string;
+  nacionalidad: string;
   fechaNacimiento: string;
   edad: string;
+  genero: "Masculino" | "Femenino" | "";
   tallaCamisa: string;
-  duiPasaporte: string;
+  tipoDocumento: "DUI" | "PASAPORTE" | "";
+  numeroDocumento: string;
+  fechaVencimientoDocumento: string;
   celular: string;
   tipoPago: "completo" | "medio pago" | "";
   contacto1Nombres: string;
@@ -72,9 +82,9 @@ export interface FormData {
 }
 
 export const initialFormData: FormData = {
-  primerNombre: "", segundoNombre: "", apellidos: "", genero: "",
-  fechaNacimiento: "", edad: "", tallaCamisa: "", duiPasaporte: "",
-  celular: "", tipoPago: "",
+  primerNombre: "", segundoNombre: "", primerApellido: "", segundoApellido: "", nacionalidad: "",
+  fechaNacimiento: "", edad: "", genero: "", tallaCamisa: "", tipoDocumento: "", numeroDocumento: "",
+  fechaVencimientoDocumento: "", celular: "", tipoPago: "",
   contacto1Nombres: "", contacto1Apellidos: "", contacto1Relacion: "", contacto1Telefono: "",
   contacto2Nombres: "", contacto2Apellidos: "", contacto2Relacion: "", contacto2Telefono: "",
   emergenciaNombres: "", emergenciaApellidos: "", emergenciaTelefono: "", emergenciaRelacion: "",

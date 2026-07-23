@@ -1,4 +1,4 @@
-﻿import { Registro } from "../../types";
+import { Registro } from "../../types";
 
 interface Props { registro: Registro; }
 
@@ -18,11 +18,15 @@ export function PrintArea({ registro: r }: Props) {
           <div className="grid grid-cols-3 gap-4 text-xs">
             <div>
               <span className="font-bold block uppercase text-[9px] text-gray-500">Nombre Completo:</span>
-              <span className="text-sm font-bold">{r.primer_nombre} {r.segundo_nombre || ""} {r.apellidos}</span>
+              <span className="text-sm font-bold">{r.primer_nombre} {r.segundo_nombre || ""} {r.primer_apellido} {r.segundo_apellido || ""}</span>
             </div>
             <div>
-              <span className="font-bold block uppercase text-[9px] text-gray-500">DUI / Pasaporte:</span>
-              <span className="text-sm font-bold">{r.dui_pasaporte}</span>
+              <span className="font-bold block uppercase text-[9px] text-gray-500">Documento:</span>
+              <span className="text-sm font-bold">{r.tipo_documento}: {r.numero_documento}</span>
+            </div>
+            <div>
+              <span className="font-bold block uppercase text-[9px] text-gray-500">Nacionalidad:</span>
+              <span className="text-sm font-bold">{r.nacionalidad}</span>
             </div>
             <div>
               <span className="font-bold block uppercase text-[9px] text-gray-500">Celular:</span>
@@ -30,18 +34,32 @@ export function PrintArea({ registro: r }: Props) {
             </div>
             <div>
               <span className="font-bold block uppercase text-[9px] text-gray-500">Fecha de Nacimiento:</span>
-              <span className="text-sm font-bold">{new Date(r.fecha_nacimiento).toLocaleDateString()}</span>
+              <span className="text-sm font-bold">{r.fecha_nacimiento}</span>
+            </div>
+            <div>
+              <span className="font-bold block uppercase text-[9px] text-gray-500">Vencimiento Doc:</span>
+              <span className="text-sm font-bold">{r.fecha_vencimiento_documento || "-"}</span>
             </div>
             <div>
               <span className="font-bold block uppercase text-[9px] text-gray-500">Edad / Genero:</span>
-              <span className="text-sm font-bold">{r.edad} anos - {r.genero}</span>
+              <span className="text-sm font-bold">{r.edad} años · {r.genero}</span>
             </div>
             <div>
               <span className="font-bold block uppercase text-[9px] text-gray-500">Talla de Camisa:</span>
               <span className="text-sm font-bold">{r.talla_camisa || "-"}</span>
             </div>
             <div className="col-span-3 pt-2 border-t border-gray-300 flex justify-between text-xs">
-              <span>Modalidad de pago: <strong className="uppercase">{r.tipo_pago}</strong></span>
+              <span>
+                Estado de Pago:{" "}
+                <strong className="uppercase">
+                  {r.tipo_pago ? `PAGO ${r.tipo_pago}` : "PENDIENTE DE PAGO"}
+                </strong>
+                {r.numero_factura && (
+                  <>
+                    {" "}· Factura: <strong className="font-mono text-[11px]">{r.numero_factura}</strong>
+                  </>
+                )}
+              </span>
               <span>ID de Registro: <span className="font-mono text-[10px]">{r.id}</span></span>
             </div>
           </div>

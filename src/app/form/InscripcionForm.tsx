@@ -1,4 +1,5 @@
-﻿import { ChevronRight, ChevronLeft, Check, AlertCircle, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { ChevronRight, ChevronLeft, Check, AlertCircle, Loader2 } from "lucide-react";
 import { useInscripcion } from "../../hooks/useInscripcion";
 import { StepBar } from "./StepBar";
 import { SuccessScreen } from "./SuccessScreen";
@@ -7,6 +8,7 @@ import { Screen2 } from "./Screen2";
 import { Screen3 } from "./Screen3";
 import { Screen4 } from "./Screen4";
 import { Screen5 } from "./Screen5";
+import { NotasImportantesScreen } from "./NotasImportantesScreen";
 
 const STEP_LABELS = [
   "Datos del Campamentero",
@@ -17,27 +19,16 @@ const STEP_LABELS = [
 ];
 
 export function InscripcionForm() {
+  const [showNotice, setShowNotice] = useState(true);
   const {
     step, form, errors, sig, submitted, isSubmitting, submitError,
     esMayor, visibleSteps,
     setField, handleSign, next, back,
   } = useInscripcion();
 
-  const goHome = () => {
-    window.history.pushState({}, "", "/");
-    window.dispatchEvent(new PopStateEvent("popstate"));
-  };
-
   return (
     <div className="min-h-screen bg-background font-['Inter',sans-serif]">
       <header className="bg-gradient-to-r from-primary to-secondary text-white px-4 py-5 text-center relative overflow-hidden">
-        <button
-          onClick={goHome}
-          className="absolute left-4 top-1/2 -translate-y-1/2 p-2 hover:bg-white/10 rounded-lg transition-colors flex items-center justify-center text-white"
-          title="Volver al inicio"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.05) 10px, rgba(255,255,255,0.05) 20px)" }} />
         <div className="relative">
           <h1 className="text-xl sm:text-2xl font-bold tracking-wide font-['Outfit',sans-serif]">Monte Sion 2026</h1>
@@ -49,6 +40,10 @@ export function InscripcionForm() {
         {submitted ? (
           <div className="bg-card rounded-2xl shadow-sm border border-border p-6 sm:p-8">
             <SuccessScreen data={form} sig={sig} />
+          </div>
+        ) : showNotice ? (
+          <div className="bg-card rounded-2xl shadow-sm border border-border p-5 sm:p-8">
+            <NotasImportantesScreen onStart={() => setShowNotice(false)} />
           </div>
         ) : (
           <div className="bg-card rounded-2xl shadow-sm border border-border p-5 sm:p-8">
@@ -94,7 +89,10 @@ export function InscripcionForm() {
                 className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow ${isSubmitting ? "opacity-75 cursor-not-allowed" : ""}`}
               >
                 {isSubmitting ? (
-                  <><span>Enviando...</span><Loader2 className="w-4 h-4 animate-spin" /></>
+                  <>
+                    <span>{step === 5 ? "Enviando..." : "Verificando..."}</span>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  </>
                 ) : (
                   <>{step === 5 ? "Enviar Inscripcion" : "Siguiente"}{step < 5 ? <ChevronRight className="w-4 h-4" /> : <Check className="w-4 h-4" />}</>
                 )}
@@ -103,7 +101,7 @@ export function InscripcionForm() {
           </div>
         )}
         <p className="text-center text-xs text-muted-foreground mt-4">
-          Campamento Monte Sion 2026 · 18-23 noviembre · $125.00 por persona
+          Campamento Monte Sion 2026 · 23-28 noviembre
         </p>
       </main>
     </div>

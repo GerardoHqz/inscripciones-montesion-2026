@@ -1,6 +1,7 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { supabase } from "../utils/supabase";
 import { FormData, initialFormData, STEPS } from "../types";
+import { nacionalidades, relaciones } from "../utils/constants";
 
 type FormErrors = Partial<Record<keyof FormData | "sig", string>>;
 
@@ -42,7 +43,17 @@ export function useInscripcion() {
         if (age >= 0) {
           extraUpdates.edad = age.toString();
           setErrors((prev) => { const n = { ...prev }; delete n.edad; return n; });
+          if (age < 18) {
+            extraUpdates.tipoDocumento = "PASAPORTE";
+          }
         }
+      }
+    }
+
+    if (k === "edad" && typeof v === "string" && v) {
+      const parsed = parseInt(v, 10);
+      if (!isNaN(parsed) && parsed < 18) {
+        extraUpdates.tipoDocumento = "PASAPORTE";
       }
     }
 
@@ -63,14 +74,25 @@ export function useInscripcion() {
 
     if (currentStep === 1) {
       if (!form.primerNombre.trim()) newErrors.primerNombre = "El primer nombre es obligatorio";
-      if (!form.apellidos.trim()) newErrors.apellidos = "El apellido es obligatorio";
+      if (!form.primerApellido.trim()) newErrors.primerApellido = "El primer apellido es obligatorio";
+      
+      if (!form.nacionalidad.trim()) {
+        newErrors.nacionalidad = "La nacionalidad es obligatoria";
+      } else if (!nacionalidades.includes(form.nacionalidad)) {
+        newErrors.nacionalidad = "Debe elegir de la lista";
+      }
+
       if (!form.genero) newErrors.genero = "Seleccione un genero";
 
       if (!form.fechaNacimiento) {
         newErrors.fechaNacimiento = "La fecha de nacimiento es obligatoria";
       } else {
         const bd = new Date(form.fechaNacimiento);
-        if (bd > today) newErrors.fechaNacimiento = "La fecha no puede ser futura";
+        if (isNaN(bd.getTime())) {
+          newErrors.fechaNacimiento = "Fecha inválida";
+        } else if (bd > today) {
+          newErrors.fechaNacimiento = "La fecha no puede ser futura";
+        }
       }
 
       if (!form.edad) {
@@ -80,7 +102,20 @@ export function useInscripcion() {
         if (isNaN(parsed) || parsed < 10) newErrors.edad = "Debe ser al menos 10 anios";
       }
 
-      if (!form.duiPasaporte.trim()) newErrors.duiPasaporte = "El DUI o pasaporte es obligatorio";
+      if (!form.tipoDocumento) {
+        newErrors.tipoDocumento = "Seleccione el tipo de documento";
+      }
+
+      if (!form.numeroDocumento.trim()) {
+        newErrors.numeroDocumento = "El numero de documento es obligatorio";
+      }
+
+      if (form.fechaVencimientoDocumento) {
+        const bd = new Date(form.fechaVencimientoDocumento);
+        if (isNaN(bd.getTime())) {
+          newErrors.fechaVencimientoDocumento = "Fecha inválida";
+        }
+      }
 
       if (!form.celular.trim()) {
         newErrors.celular = "El celular es obligatorio";
@@ -88,15 +123,18 @@ export function useInscripcion() {
         const digits = form.celular.replace(/[^0-9]/g, "");
         if (digits.length < 8) newErrors.celular = "Minimo 8 digitos";
       }
-
-      if (!form.tipoPago) newErrors.tipoPago = "Seleccione un tipo de pago";
     }
 
     if (currentStep === 2) {
       if (esMayor) return true;
       if (!form.contacto1Nombres.trim()) newErrors.contacto1Nombres = "El nombre es obligatorio";
       if (!form.contacto1Apellidos.trim()) newErrors.contacto1Apellidos = "El apellido es obligatorio";
-      if (!form.contacto1Relacion.trim()) newErrors.contacto1Relacion = "La relacion es obligatoria";
+      
+      if (!form.contacto1Relacion.trim()) {
+        newErrors.contacto1Relacion = "La relacion es obligatoria";
+      } else if (!relaciones.includes(form.contacto1Relacion)) {
+        newErrors.contacto1Relacion = "Debe elegir de la lista";
+      }
 
       if (!form.contacto1Telefono.trim()) {
         newErrors.contacto1Telefono = "El telefono es obligatorio";
@@ -109,12 +147,21 @@ export function useInscripcion() {
         const digits = form.contacto2Telefono.replace(/[^0-9]/g, "");
         if (digits.length < 8) newErrors.contacto2Telefono = "Minimo 8 digitos";
       }
+
+      if (form.contacto2Relacion.trim() && !relaciones.includes(form.contacto2Relacion)) {
+        newErrors.contacto2Relacion = "Debe elegir de la lista";
+      }
     }
 
     if (currentStep === 3) {
       if (!form.emergenciaNombres.trim()) newErrors.emergenciaNombres = "El nombre es obligatorio";
       if (!form.emergenciaApellidos.trim()) newErrors.emergenciaApellidos = "El apellido es obligatorio";
-      if (!form.emergenciaRelacion.trim()) newErrors.emergenciaRelacion = "La relacion es obligatoria";
+      
+      if (!form.emergenciaRelacion.trim()) {
+        newErrors.emergenciaRelacion = "La relacion es obligatoria";
+      } else if (!relaciones.includes(form.emergenciaRelacion)) {
+        newErrors.emergenciaRelacion = "Debe elegir de la lista";
+      }
 
       if (!form.emergenciaTelefono.trim()) {
         newErrors.emergenciaTelefono = "El telefono es obligatorio";
@@ -162,7 +209,7 @@ export function useInscripcion() {
     try {
       const blob = base64ToBlob(sig);
       const sanitizedNombre = form.primerNombre.trim().replace(/[^a-zA-Z0-9]/g, "_");
-      const sanitizedApellido = form.apellidos.trim().replace(/[^a-zA-Z0-9]/g, "_");
+      const sanitizedApellido = form.primerApellido.trim().replace(/[^a-zA-Z0-9]/g, "_");
       const fileName = `firma_${sanitizedNombre}_${sanitizedApellido}_${Date.now()}.png`;
 
       const { error: uploadError } = await supabase.storage
@@ -173,19 +220,27 @@ export function useInscripcion() {
 
       const { data: { publicUrl } } = supabase.storage.from("firmas").getPublicUrl(fileName);
 
+      const formattedFechaNacimiento = form.fechaNacimiento;
+      const formattedFechaVencimiento = form.fechaVencimientoDocumento || null;
+
       const { error: insertError } = await supabase.from("inscripciones").insert([{
         primer_nombre: form.primerNombre,
         segundo_nombre: form.segundoNombre || null,
-        apellidos: form.apellidos,
-        genero: form.genero,
-        fecha_nacimiento: form.fechaNacimiento,
+        primer_apellido: form.primerApellido,
+        segundo_apellido: form.segundoApellido || null,
+        nacionalidad: form.nacionalidad,
+        fecha_nacimiento: formattedFechaNacimiento,
         edad: parseInt(form.edad, 10),
+        genero: form.genero,
         talla_camisa: form.tallaCamisa || null,
-        dui_pasaporte: form.duiPasaporte,
+        tipo_documento: form.tipoDocumento,
+        numero_documento: form.numeroDocumento,
+        fecha_vencimiento_documento: formattedFechaVencimiento,
         celular: form.celular,
-        tipo_pago: form.tipoPago,
+        tipo_pago: null,
+        numero_factura: null,
         contacto1_nombres: esMayor ? form.primerNombre : form.contacto1Nombres,
-        contacto1_apellidos: esMayor ? form.apellidos : form.contacto1Apellidos,
+        contacto1_apellidos: esMayor ? form.primerApellido : form.contacto1Apellidos,
         contacto1_relacion: esMayor ? "Mismo" : form.contacto1Relacion,
         contacto1_telefono: esMayor ? form.celular : form.contacto1Telefono,
         contacto2_nombres: esMayor ? null : (form.contacto2Nombres || null),
@@ -208,6 +263,9 @@ export function useInscripcion() {
 
       if (insertError) {
         await supabase.storage.from("firmas").remove([fileName]);
+        if (insertError.code === "23505" || insertError.message?.includes("duplicate") || insertError.message?.includes("idx_inscripciones_numero_documento")) {
+          throw new Error("El número de documento ya está registrado para otra inscripción.");
+        }
         throw new Error(`Error al registrar la inscripcion: ${insertError.message}`);
       }
 
@@ -223,10 +281,44 @@ export function useInscripcion() {
   // ── Navigation ───────────────────────────────────────────────────────────────
 
   const next = async () => {
-    if (validateStep(step)) {
-      if (step === 1 && esMayor) { setStep(3); setSubmitError(null); }
-      else if (step < 5) { setStep(step + 1); setSubmitError(null); }
-      else { await handleSubmit(); }
+    if (!validateStep(step)) return;
+
+    if (step === 1) {
+      setIsSubmitting(true);
+      setSubmitError(null);
+      try {
+        const { data, error } = await supabase
+          .from("inscripciones")
+          .select("id")
+          .eq("numero_documento", form.numeroDocumento.trim())
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (data) {
+          setErrors((prev) => ({
+            ...prev,
+            numeroDocumento: "Este número de documento ya está registrado",
+          }));
+          return;
+        }
+      } catch (err: any) {
+        console.error("Error al verificar documento:", err);
+        setSubmitError("Error al verificar el documento. Por favor, intente de nuevo.");
+        return;
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+
+    if (step === 1 && esMayor) {
+      setStep(3);
+      setSubmitError(null);
+    } else if (step < 5) {
+      setStep(step + 1);
+      setSubmitError(null);
+    } else {
+      await handleSubmit();
     }
   };
 

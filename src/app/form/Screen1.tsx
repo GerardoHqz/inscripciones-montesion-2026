@@ -1,7 +1,9 @@
-﻿import { AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { FormData } from "../../types";
 import { Field } from "./Field";
 import { SectionTitle } from "./SectionTitle";
+import { Autocomplete } from "./Autocomplete";
+import { nacionalidades } from "../../utils/constants";
 
 interface Props {
   data: FormData;
@@ -21,17 +23,16 @@ export function Screen1({ data, onChange, errors }: Props) {
         <Field label="Primer Nombre" name="primerNombre" value={data.primerNombre} onChange={handle} required error={errors.primerNombre} />
         <Field label="Segundo Nombre" name="segundoNombre" value={data.segundoNombre} onChange={handle} error={errors.segundoNombre} />
       </div>
-      <Field label="Apellidos" name="apellidos" value={data.apellidos} onChange={handle} required error={errors.apellidos} />
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="col-span-2 flex flex-col gap-1">
-          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex justify-between items-center">
-            <span>Genero<span className="text-red-500 ml-0.5">*</span></span>
-            {errors.genero && (
-              <span className="text-destructive text-[10px] lowercase first-letter:uppercase font-semibold flex items-center gap-0.5 animate-in fade-in slide-in-from-top-1 duration-200">
-                <AlertCircle className="w-3.5 h-3.5" /> {errors.genero}
-              </span>
-            )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Field label="Primer Apellido" name="primerApellido" value={data.primerApellido} onChange={handle} required error={errors.primerApellido} />
+        <Field label="Segundo Apellido" name="segundoApellido" value={data.segundoApellido} onChange={handle} error={errors.segundoApellido} />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Genero<span className="text-red-500 ml-0.5">*</span>
           </label>
           <div className="flex gap-3">
             {(["Masculino", "Femenino"] as const).map((g) => (
@@ -48,41 +49,96 @@ export function Screen1({ data, onChange, errors }: Props) {
               >{g}</button>
             ))}
           </div>
+          {errors.genero && (
+            <span className="text-destructive text-[11px] font-semibold flex items-center gap-1 mt-0.5 animate-in fade-in slide-in-from-top-1 duration-200">
+              <AlertCircle className="w-3.5 h-3.5" /> {errors.genero}
+            </span>
+          )}
         </div>
-        <Field label="Fec. Nacimiento" name="fechaNacimiento" value={data.fechaNacimiento} onChange={handle} type="date" required error={errors.fechaNacimiento} />
+        <Field
+          label="Fec. Nacimiento"
+          name="fechaNacimiento"
+          value={data.fechaNacimiento}
+          onChange={handle}
+          type="date"
+          required
+          error={errors.fechaNacimiento}
+        />
         <Field label="Edad" name="edad" value={data.edad} onChange={handle} type="number" placeholder="0" required error={errors.edad} />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Field label="Talla de Camisa" name="tallaCamisa" value={data.tallaCamisa} onChange={handle} placeholder="S / M / L / XL" error={errors.tallaCamisa} />
-        <Field label="DUI o Pasaporte" name="duiPasaporte" value={data.duiPasaporte} onChange={handle} required error={errors.duiPasaporte} />
+        <Autocomplete
+          label="Nacionalidad"
+          name="nacionalidad"
+          value={data.nacionalidad}
+          onChange={onChange}
+          options={nacionalidades}
+          required
+          error={errors.nacionalidad}
+          placeholder="Ej. Salvadoreña"
+        />
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Talla de Camisa</label>
+          <select
+            name="tallaCamisa"
+            value={data.tallaCamisa}
+            onChange={(e) => onChange("tallaCamisa", e.target.value)}
+            className="w-full px-3 py-2.5 rounded-lg border bg-input-background text-foreground text-sm focus:outline-none focus:ring-2 transition-all border-border focus:ring-primary/40 focus:border-primary"
+          >
+            <option value="">Seleccione una talla</option>
+            <option value="S">S</option>
+            <option value="M">M</option>
+            <option value="L">L</option>
+            <option value="XL">XL</option>
+            <option value="XXL">XXL</option>
+          </select>
+        </div>
         <Field label="Celular" name="celular" value={data.celular} onChange={handle} type="tel" placeholder="0000-0000" required error={errors.celular} />
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex justify-between items-center">
-          <span>Tipo de Pago<span className="text-red-500 ml-0.5">*</span></span>
-          {errors.tipoPago && (
-            <span className="text-destructive text-[10px] lowercase first-letter:uppercase font-semibold flex items-center gap-0.5 animate-in fade-in slide-in-from-top-1 duration-200">
-              <AlertCircle className="w-3.5 h-3.5" /> {errors.tipoPago}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Tipo Documento<span className="text-red-500 ml-0.5">*</span>
+          </label>
+          <div className="flex gap-2">
+            {(["DUI", "PASAPORTE"] as const).map((doc) => {
+              const esMenor = data.edad ? parseInt(data.edad, 10) < 18 : false;
+              const disabled = doc === "DUI" && esMenor;
+              return (
+                <button
+                  key={doc} type="button"
+                  disabled={disabled}
+                  onClick={() => onChange("tipoDocumento", doc)}
+                  className={`flex-1 py-2.5 px-1 rounded-lg border text-xs sm:text-sm font-bold tracking-wider transition-all ${
+                    disabled
+                      ? "opacity-50 cursor-not-allowed bg-muted text-muted-foreground border-border"
+                      : data.tipoDocumento === doc
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                      : errors.tipoDocumento
+                      ? "bg-input-background border-destructive text-destructive hover:border-destructive"
+                      : "bg-input-background border-border text-foreground hover:border-primary/50"
+                  }`}
+                >{doc}</button>
+              );
+            })}
+          </div>
+          {errors.tipoDocumento && (
+            <span className="text-destructive text-[11px] font-semibold flex items-center gap-1 mt-0.5 animate-in fade-in slide-in-from-top-1 duration-200">
+              <AlertCircle className="w-3.5 h-3.5" /> {errors.tipoDocumento}
             </span>
           )}
-        </label>
-        <div className="flex gap-3">
-          {(["completo", "medio pago"] as const).map((t) => (
-            <button
-              key={t} type="button"
-              onClick={() => onChange("tipoPago", t)}
-              className={`flex-1 py-2.5 rounded-lg border text-sm font-medium capitalize transition-all ${
-                data.tipoPago === t
-                  ? "bg-secondary text-secondary-foreground border-secondary shadow-sm"
-                  : errors.tipoPago
-                  ? "bg-input-background border-destructive text-destructive hover:border-destructive"
-                  : "bg-input-background border-border text-foreground hover:border-secondary/50"
-              }`}
-            >{t.charAt(0).toUpperCase() + t.slice(1)}</button>
-          ))}
         </div>
+        <Field label="Número Documento" name="numeroDocumento" value={data.numeroDocumento} onChange={handle} placeholder="Ej. 00000000-0" required error={errors.numeroDocumento} />
+        <Field
+          label="Fecha Vencimiento Doc."
+          name="fechaVencimientoDocumento"
+          value={data.fechaVencimientoDocumento}
+          onChange={handle}
+          type="date"
+          error={errors.fechaVencimientoDocumento}
+        />
       </div>
     </div>
   );

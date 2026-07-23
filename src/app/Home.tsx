@@ -1,6 +1,12 @@
-import { UserPlus, ClipboardList, Tent, Sparkles } from "lucide-react";
+import { UserPlus, ClipboardList, Tent, Sparkles, LogOut } from "lucide-react";
+import { AdminUser } from "./App";
 
-export default function Home() {
+interface HomeProps {
+  onLogout: () => void;
+  adminUser: AdminUser;
+}
+
+export default function Home({ onLogout, adminUser }: HomeProps) {
   const navigateTo = (path: string) => {
     window.history.pushState({}, "", path);
     window.dispatchEvent(new PopStateEvent("popstate"));
@@ -23,9 +29,16 @@ export default function Home() {
               Monte Sión 2026
             </span>
           </div>
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest bg-muted px-2.5 py-1 rounded-full">
-            Taber × Jev
-          </span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onLogout}
+              className="p-2 hover:bg-red-500/10 active:bg-red-500/20 text-red-600 rounded-lg transition-colors flex items-center justify-center cursor-pointer border border-red-500/10"
+              title="Cerrar sesión"
+            >
+              Logout 
+              <LogOut className="ml-2 w-4 h-4" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -87,7 +100,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="py-6 border-t border-border bg-white/40 text-center relative z-10">
         <p className="text-xs text-muted-foreground font-medium">
-          Misión Bautista Internacional · 18 al 23 de noviembre · Monte Sión 2026
+          Misión Bautista Internacional · 23 al 28 de noviembre · Monte Sión 2026
         </p>
       </footer>
     </div>

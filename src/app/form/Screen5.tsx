@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Pen, Trash2, AlertCircle } from "lucide-react";
 import { SectionTitle } from "./SectionTitle";
 
@@ -73,16 +73,7 @@ export function Screen5({ onSign, error }: Props) {
 
   return (
     <div className="space-y-5">
-      <SectionTitle>
-        <div className="flex justify-between items-center w-full">
-          <span>Firma del Padre/Madre Responsable</span>
-          {error && (
-            <span className="text-destructive text-[10px] lowercase first-letter:uppercase font-semibold flex items-center gap-0.5 animate-in fade-in slide-in-from-top-1 duration-200">
-              <AlertCircle className="w-3.5 h-3.5" /> {error}
-            </span>
-          )}
-        </div>
-      </SectionTitle>
+      <SectionTitle>Firma del Padre/Madre Responsable</SectionTitle>
 
       <p className="text-sm text-muted-foreground">Por favor dibuje su firma en el recuadro. Use el mouse o toque la pantalla.</p>
 
@@ -99,6 +90,12 @@ export function Screen5({ onSign, error }: Props) {
           </div>
         )}
       </div>
+
+      {error && (
+        <span className="text-destructive text-[11px] font-semibold flex items-center gap-1 mt-1 animate-in fade-in slide-in-from-top-1 duration-200">
+          <AlertCircle className="w-3.5 h-3.5" /> {error}
+        </span>
+      )}
 
       <button type="button" onClick={clear} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors">
         <Trash2 className="w-4 h-4" /> Limpiar firma

@@ -1,6 +1,8 @@
-﻿import { FormData } from "../../types";
+import { FormData } from "../../types";
 import { Field } from "./Field";
 import { SectionTitle } from "./SectionTitle";
+import { Autocomplete } from "./Autocomplete";
+import { relaciones } from "../../utils/constants";
 
 const textareaClass = "w-full px-3 py-2.5 rounded-lg border border-border bg-input-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all resize-none placeholder:text-muted-foreground/50";
 
@@ -23,7 +25,16 @@ export function Screen3({ data, onChange, errors }: Props) {
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Telefono Celular" name="emergenciaTelefono" value={data.emergenciaTelefono} onChange={handle as React.ChangeEventHandler<HTMLInputElement>} type="tel" placeholder="0000-0000" required error={errors.emergenciaTelefono} />
-        <Field label="Relacion con el campamentero/a" name="emergenciaRelacion" value={data.emergenciaRelacion} onChange={handle as React.ChangeEventHandler<HTMLInputElement>} required error={errors.emergenciaRelacion} />
+        <Autocomplete
+          label="Relacion con el campamentero/a"
+          name="emergenciaRelacion"
+          value={data.emergenciaRelacion}
+          onChange={onChange}
+          options={relaciones}
+          required
+          error={errors.emergenciaRelacion}
+          placeholder="Ej. Tío, Hermano..."
+        />
       </div>
 
       <SectionTitle>Informacion Medica</SectionTitle>

@@ -1,4 +1,5 @@
-﻿import { X, Pen, Save, Printer, FileCheck, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, Pen, Save, Printer, FileCheck, AlertCircle } from "lucide-react";
 import { Registro } from "../../types";
 
 const inputClass = "w-full px-2.5 py-1.5 border border-border rounded-lg bg-input-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all";
@@ -16,6 +17,8 @@ interface Props {
   onSaveEdit: () => void;
   onClose: () => void;
   onPrint: () => void;
+  onConfirmarPago?: (id: string, tipoPago: 'completo' | 'medio pago', numeroFactura: string) => Promise<void>;
+  rol: 'admin' | 'colaborador';
 }
 
 function SectionHeader({ title }: { title: string }) {
@@ -30,7 +33,38 @@ function SectionHeader({ title }: { title: string }) {
 export function RegistroModal({
   registro, isEditing, isSaving, saveError, editForm,
   onInputChange, onStartEdit, onCancelEdit, onSaveEdit, onClose, onPrint,
+  onConfirmarPago, rol,
 }: Props) {
+  const [pagoTipo, setPagoTipo] = useState<'completo' | 'medio pago'>('completo');
+  const [pagoFactura, setPagoFactura] = useState('');
+  const [cargandoPago, setCargandoPago] = useState(false);
+  const [errorPago, setErrorPago] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPagoTipo('completo');
+    setPagoFactura('');
+    setErrorPago(null);
+  }, [registro.id]);
+
+  const handleConfirmar = async () => {
+    if (!pagoFactura.trim()) {
+      setErrorPago("Ingrese el número de factura.");
+      return;
+    }
+    setErrorPago(null);
+    setCargandoPago(true);
+    try {
+      if (onConfirmarPago) {
+        await onConfirmarPago(registro.id, pagoTipo, pagoFactura);
+      }
+    } catch (err: any) {
+      console.error(err);
+      setErrorPago(err.message || "Error al procesar el pago.");
+    } finally {
+      setCargandoPago(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 backdrop-blur-xs p-4 overflow-y-auto no-print">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto border border-[#e5e7eb] flex flex-col">
@@ -41,8 +75,13 @@ export function RegistroModal({
             <h3 className="font-extrabold text-lg text-foreground font-['Outfit',sans-serif]">
               {isEditing ? "Editar Inscripcion" : "Ficha de Inscripcion"}
             </h3>
-            <p className="text-xs text-muted-foreground">
-              {isEditing ? "Modificando datos del registro" : `Registrado el ${new Date(registro.created_at).toLocaleString()}`}
+            <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-2">
+              <span>{isEditing ? "Modificando datos del registro" : `Registrado el ${new Date(registro.created_at).toLocaleString()}`}</span>
+              {!isEditing && registro.user_ultima_actualizacion && (
+                <span className="bg-muted px-2 py-0.5 rounded text-[10px] font-bold text-muted-foreground inline-block">
+                  Modificado por: @{registro.user_ultima_actualizacion}
+                </span>
+              )}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -57,9 +96,11 @@ export function RegistroModal({
               </>
             ) : (
               <>
-                <button onClick={onStartEdit} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-[#1e40af] hover:bg-[#1e40af]/90 text-white rounded-lg transition-colors">
-                  <Pen className="w-3.5 h-3.5" /> Editar Ficha
-                </button>
+                {rol === 'admin' && (
+                  <button onClick={onStartEdit} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-[#1e40af] hover:bg-[#1e40af]/90 text-white rounded-lg transition-colors">
+                    <Pen className="w-3.5 h-3.5" /> Editar Ficha
+                  </button>
+                )}
                 <button onClick={onPrint} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-[#0d2b20] hover:bg-[#0d2b20]/90 text-white rounded-lg transition-colors">
                   <Printer className="w-3.5 h-3.5" /> Imprimir Ficha
                 </button>
@@ -87,8 +128,17 @@ export function RegistroModal({
                 <>
                   <div><label className={labelClass}>Primer Nombre</label><input type="text" value={editForm.primer_nombre || ""} onChange={(e) => onInputChange("primer_nombre", e.target.value)} className={inputClass} /></div>
                   <div><label className={labelClass}>Segundo Nombre</label><input type="text" value={editForm.segundo_nombre || ""} onChange={(e) => onInputChange("segundo_nombre", e.target.value)} className={inputClass} /></div>
-                  <div><label className={labelClass}>Apellidos</label><input type="text" value={editForm.apellidos || ""} onChange={(e) => onInputChange("apellidos", e.target.value)} className={inputClass} /></div>
-                  <div><label className={labelClass}>DUI / Pasaporte</label><input type="text" value={editForm.dui_pasaporte || ""} onChange={(e) => onInputChange("dui_pasaporte", e.target.value)} className={inputClass} /></div>
+                  <div><label className={labelClass}>Primer Apellido</label><input type="text" value={editForm.primer_apellido || ""} onChange={(e) => onInputChange("primer_apellido", e.target.value)} className={inputClass} /></div>
+                  <div><label className={labelClass}>Segundo Apellido</label><input type="text" value={editForm.segundo_apellido || ""} onChange={(e) => onInputChange("segundo_apellido", e.target.value)} className={inputClass} /></div>
+                  <div><label className={labelClass}>Nacionalidad</label><input type="text" value={editForm.nacionalidad || ""} onChange={(e) => onInputChange("nacionalidad", e.target.value)} className={inputClass} /></div>
+                  <div><label className={labelClass}>Tipo Documento</label>
+                    <select value={editForm.tipo_documento || ""} onChange={(e) => onInputChange("tipo_documento", e.target.value)} className={inputClass}>
+                      <option value="DUI">DUI</option>
+                      <option value="PASAPORTE">PASAPORTE</option>
+                    </select>
+                  </div>
+                  <div><label className={labelClass}>Número Documento</label><input type="text" value={editForm.numero_documento || ""} onChange={(e) => onInputChange("numero_documento", e.target.value)} className={inputClass} /></div>
+                  <div><label className={labelClass}>Vencimiento Documento</label><input type="date" value={editForm.fecha_vencimiento_documento || ""} onChange={(e) => onInputChange("fecha_vencimiento_documento", e.target.value)} className={inputClass} /></div>
                   <div><label className={labelClass}>Celular</label><input type="tel" value={editForm.celular || ""} onChange={(e) => onInputChange("celular", e.target.value)} className={inputClass} /></div>
                   <div><label className={labelClass}>Fecha de Nacimiento</label><input type="date" value={editForm.fecha_nacimiento || ""} onChange={(e) => onInputChange("fecha_nacimiento", e.target.value)} className={inputClass} /></div>
                   <div><label className={labelClass}>Edad</label><input type="number" value={editForm.edad || 0} onChange={(e) => onInputChange("edad", parseInt(e.target.value, 10))} className={inputClass} /></div>
@@ -102,27 +152,92 @@ export function RegistroModal({
                       <option value="">Sin registrar</option><option value="S">S</option><option value="M">M</option><option value="L">L</option><option value="XL">XL</option><option value="XXL">XXL</option>
                     </select>
                   </div>
-                  <div className="col-span-1 sm:col-span-2 md:col-span-3 pt-2 border-t border-border/60 flex items-center justify-between">
-                    <span className="text-xs font-semibold text-muted-foreground">Modalidad de pago:</span>
-                    <select value={editForm.tipo_pago || ""} onChange={(e) => onInputChange("tipo_pago", e.target.value)} className="px-3 py-1.5 border border-border rounded-lg bg-input-background text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40">
-                      <option value="completo">Completo</option><option value="medio pago">Medio Pago</option>
-                    </select>
+                  <div className="col-span-1 sm:col-span-2 md:col-span-3 pt-3 border-t border-border/60 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block mb-1">Modalidad de Pago</label>
+                      <select value={editForm.tipo_pago || ""} onChange={(e) => onInputChange("tipo_pago", e.target.value || null)} className="w-full px-2.5 py-1.5 border border-border rounded-lg bg-input-background text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40">
+                        <option value="">Pendiente (Sin Registrar)</option>
+                        <option value="completo">Completo</option>
+                        <option value="medio pago">Medio Pago</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block mb-1">Número de Factura</label>
+                      <input
+                        type="text"
+                        value={editForm.numero_factura || ""}
+                        onChange={(e) => onInputChange("numero_factura", e.target.value || null)}
+                        placeholder="Ej. FAC-00123"
+                        className="w-full px-2.5 py-1.5 border border-border rounded-lg bg-input-background text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                      />
+                    </div>
                   </div>
                 </>
               ) : (
                 <>
-                  <div><label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Nombre Completo</label><p className="text-sm font-semibold text-foreground">{registro.primer_nombre} {registro.segundo_nombre || ""} {registro.apellidos}</p></div>
-                  <div><label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">DUI / Pasaporte</label><p className="text-sm font-semibold text-foreground">{registro.dui_pasaporte}</p></div>
+                  <div><label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Nombre Completo</label><p className="text-sm font-semibold text-foreground">{registro.primer_nombre} {registro.segundo_nombre || ""} {registro.primer_apellido} {registro.segundo_apellido || ""}</p></div>
+                  <div><label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Nacionalidad</label><p className="text-sm font-semibold text-foreground">{registro.nacionalidad}</p></div>
+                  <div><label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Documento ({registro.tipo_documento})</label><p className="text-sm font-semibold text-foreground">{registro.numero_documento}{registro.fecha_vencimiento_documento && <span className="text-[11px] font-normal text-muted-foreground ml-1.5">(Vence: {registro.fecha_vencimiento_documento})</span>}</p></div>
                   <div><label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Celular</label><p className="text-sm font-semibold text-foreground">{registro.celular}</p></div>
-                  <div><label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Fecha de Nacimiento</label><p className="text-sm font-semibold text-foreground">{new Date(registro.fecha_nacimiento).toLocaleDateString()}</p></div>
-                  <div><label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Edad / Genero</label><p className="text-sm font-semibold text-foreground">{registro.edad} anos - {registro.genero}</p></div>
+                  <div><label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Fecha de Nacimiento</label><p className="text-sm font-semibold text-foreground">{registro.fecha_nacimiento}</p></div>
+                  <div><label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Edad</label><p className="text-sm font-semibold text-foreground">{registro.edad} años · {registro.genero}</p></div>
                   <div><label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Talla Camisa</label><p className="text-sm font-semibold text-foreground">{registro.talla_camisa || "Sin registrar"}</p></div>
-                  <div className="col-span-1 sm:col-span-2 md:col-span-3 pt-2 border-t border-border/60 flex items-center justify-between">
-                    <span className="text-xs font-semibold text-muted-foreground">Modalidad de pago contratada:</span>
-                    <span className={`text-xs font-bold uppercase px-2.5 py-0.5 rounded-full ${registro.tipo_pago === "completo" ? "bg-secondary/15 text-secondary" : "bg-amber-500/15 text-amber-700"}`}>
-                      Pago {registro.tipo_pago}
-                    </span>
-                  </div>
+                  {registro.tipo_pago !== null ? (
+                    <div className="col-span-1 sm:col-span-2 md:col-span-3 pt-3 border-t border-border/60 flex items-center justify-between">
+                      <span className="text-xs font-semibold text-muted-foreground">Pago Registrado:</span>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs font-bold uppercase px-2.5 py-0.5 rounded-full ${registro.tipo_pago === "completo" ? "bg-secondary/15 text-secondary" : "bg-amber-500/15 text-amber-700"}`}>
+                          Pago {registro.tipo_pago}
+                        </span>
+                        {registro.numero_factura && (
+                          <span className="text-xs font-mono text-muted-foreground">
+                            (Factura: <span className="font-bold text-foreground">{registro.numero_factura}</span>)
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="col-span-1 sm:col-span-2 md:col-span-3 pt-3 border-t border-border/60 bg-amber-500/5 p-4 rounded-xl border border-amber-500/20 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-amber-800 uppercase tracking-wide flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+                          Pendiente de Pago en Librería
+                        </span>
+                        {errorPago && <span className="text-xs text-red-600 font-semibold">{errorPago}</span>}
+                      </div>
+                      <div className="flex flex-col sm:flex-row gap-3 items-end">
+                        <div className="flex-1 w-full space-y-1">
+                          <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Tipo Pago</label>
+                          <select
+                            value={pagoTipo}
+                            onChange={(e) => setPagoTipo(e.target.value as any)}
+                            className="w-full px-2.5 py-1.5 border border-border rounded-lg bg-white text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
+                          >
+                            <option value="completo">Pago Completo</option>
+                            <option value="medio pago">Medio Pago</option>
+                          </select>
+                        </div>
+                        <div className="flex-1 w-full space-y-1">
+                          <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Número Factura</label>
+                          <input
+                            type="text"
+                            placeholder="Ej. FAC-00123"
+                            value={pagoFactura}
+                            onChange={(e) => setPagoFactura(e.target.value)}
+                            className="w-full px-2.5 py-1.5 border border-border rounded-lg bg-white text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 placeholder:text-muted-foreground/30"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleConfirmar}
+                          disabled={cargandoPago}
+                          className="px-4 py-1.5 bg-primary hover:bg-primary-hover active:bg-primary/95 text-white text-xs font-bold rounded-lg shadow-sm cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto h-[32px] flex items-center justify-center gap-1.5"
+                        >
+                          {cargandoPago ? "Procesando..." : "Confirmar e Inscribir"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </div>
