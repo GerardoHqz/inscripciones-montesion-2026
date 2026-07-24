@@ -44,7 +44,7 @@ export function RegistrosTable({ registros, loading, error, onSelect, onRetry, t
             <th className="py-3.5 px-4 bg-slate-50">DUI / Pasaporte</th>
             <th className="py-3.5 px-4 bg-slate-50">Celular</th>
             {tabActiva === "activas" ? (
-              <th className="py-3.5 px-4 text-left bg-slate-50">Facturación</th>
+              <th className="py-3.5 px-4 text-left bg-slate-50">Pago</th>
             ) : (
               <th className="py-3.5 px-4 text-center bg-slate-50">Estado</th>
             )}
@@ -71,8 +71,16 @@ export function RegistrosTable({ registros, loading, error, onSelect, onRetry, t
               <td className="py-3.5 px-4">{reg.celular}</td>
               {tabActiva === "activas" ? (
                 <td className="py-3.5 px-4 text-left">
-                  <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full ${reg.tipo_pago === "completo" ? "bg-secondary/10 text-secondary border border-secondary/20" : "bg-amber-500/10 text-amber-700 border border-amber-500/20"}`}>
-                    {reg.tipo_pago === "completo" ? "Pago Completo" : reg.tipo_pago === "medio pago" ? "Medio Pago" : reg.tipo_pago}
+                  <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    reg.tipo_pago === "completo"
+                      ? "bg-secondary/10 text-secondary border border-secondary/20"
+                      : reg.tipo_pago === "medio pago"
+                      ? "bg-amber-500/10 text-amber-700 border border-amber-500/20"
+                      : reg.tipo_pago === "becado"
+                      ? "bg-purple-500/10 text-purple-700 border border-purple-500/20"
+                      : "bg-muted text-muted-foreground"
+                  }`}>
+                    {reg.tipo_pago === "completo" ? "Pago Completo" : reg.tipo_pago === "medio pago" ? "Medio Pago" : reg.tipo_pago === "becado" ? "Becado" : reg.tipo_pago}
                   </span>
                 </td>
               ) : (

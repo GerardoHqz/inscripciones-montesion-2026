@@ -39,19 +39,28 @@ export default function App() {
     window.dispatchEvent(new PopStateEvent("popstate"));
   };
 
-  // Rutas públicas (Formulario de Inscripción para el QR)
-  if (path === "/" || path === "/inscripcion" || path === "/nueva-inscripcion") {
+  // Rutas públicas de formulario
+  if (path === "/" || path === "" || path === "/inscripcion" || path === "/nueva-inscripcion") {
     return <InscripcionForm />;
   }
 
-  // Rutas protegidas (Panel administrativo)
-  if (!adminUser) {
-    return <Login onLoginSuccess={handleLoginSuccess} />;
-  }
-
-  if (path === "/admin" || path === "/dashboard") {
+  // Rutas protegidas (Panel administrativo y login)
+  if (path === "/admin" || path === "/dashboard" || path === "/login") {
+    if (!adminUser) {
+      return <Login onLoginSuccess={handleLoginSuccess} />;
+    }
     return <DashboardPage onLogout={handleLogout} adminUser={adminUser} />;
   }
 
-  return <Home onLogout={handleLogout} adminUser={adminUser} />;
+  // Menú home si está autenticado
+  if (path === "/home" && adminUser) {
+    return <Home onLogout={handleLogout} adminUser={adminUser} />;
+  }
+
+  // Para cualquier otra ruta incorrecta o no existente, se limpia la URL a "/" y se muestra el formulario
+  if (window.location.pathname !== "/") {
+    window.history.replaceState({}, "", "/");
+  }
+
+  return <InscripcionForm />;
 }

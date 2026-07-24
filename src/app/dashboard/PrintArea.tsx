@@ -1,141 +1,345 @@
 import { Registro } from "../../types";
+import logoImg from "../../imports/MONTE WEB-13.png";
 
-interface Props { registro: Registro; }
+interface Props {
+  registro: Registro;
+  isPublicForm?: boolean;
+}
 
-export function PrintArea({ registro: r }: Props) {
+export function PrintArea({ registro: r, isPublicForm = false }: Props) {
+  const esMenor = r.edad < 18;
+
   return (
-    <div id="print-area" className="hidden print:block p-0 max-w-4xl mx-auto text-black">
-      <div className="text-center border-b-2 border-black pb-2 mb-3.5">
-        <h2 className="text-xl font-black uppercase tracking-wider">FICHA DE INSCRIPCION - MONTE SION 2026</h2>
-        <p className="text-xs font-semibold uppercase tracking-widest text-gray-600 mt-0.5">Mision Bautista Internacional - Tabernaculo Biblico Bautista</p>
-        <p className="text-[10px] text-gray-500 mt-0.5">Fecha de registro: {new Date(r.created_at).toLocaleString()}</p>
-      </div>
+    <div id="print-area" className="p-6 w-[780px] max-w-full mx-auto text-black font-sans bg-white space-y-6">
+      
+      {/* ─────────────────── PÁGINA 1: FICHA DE INSCRIPCIÓN (MODAL ADMIN STYLE) ─────────────────── */}
+      <div id="pdf-page-1" className="pdf-page bg-white p-2 space-y-5">
+        
+        {/* Encabezado Principal */}
+        <div className="border-b border-black pb-3 flex justify-between items-end">
+          <div>
+            <h3 className="font-extrabold text-xl text-black uppercase tracking-wide">
+              Ficha de Inscripcion
+            </h3>
+            <p className="text-xs text-gray-600 mt-0.5">
+              Registrado el {new Date(r.created_at || Date.now()).toLocaleString()}
+            </p>
+          </div>
+          <div className="text-right flex items-center justify-end">
+            <img src={logoImg} alt="Monte Sion 2026" className="h-14 w-auto object-contain" />
+          </div>
+        </div>
 
-      <div className="space-y-3.5">
-        {/* 1. Datos del Campamentero */}
-        <div className="border border-black rounded-lg p-3">
-          <h3 className="text-xs font-bold uppercase bg-black text-white px-2 py-0.5 inline-block rounded mb-2">1. Datos del Campamentero</h3>
-          <div className="grid grid-cols-3 gap-4 text-xs">
+        {/* Sección 1: Datos del Campamentero */}
+        <div>
+          <div className="flex items-center gap-2 mb-2.5">
+            <div className="w-1.5 h-4 bg-black rounded-full" />
+            <h4 className="text-xs font-bold uppercase tracking-wider text-black">
+              1. DATOS DEL CAMPAMENTERO
+            </h4>
+          </div>
+          
+          <div className="grid grid-cols-3 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-300 text-xs">
             <div>
-              <span className="font-bold block uppercase text-[9px] text-gray-500">Nombre Completo:</span>
-              <span className="text-sm font-bold">{r.primer_nombre} {r.segundo_nombre || ""} {r.primer_apellido} {r.segundo_apellido || ""}</span>
+              <label className="text-[10px] uppercase font-bold text-gray-600 tracking-wider block mb-1">
+                NOMBRE COMPLETO
+              </label>
+              <p className="text-sm font-bold text-black leading-tight">
+                {r.primer_nombre} {r.segundo_nombre || ""} {r.primer_apellido} {r.segundo_apellido || ""}
+              </p>
             </div>
             <div>
-              <span className="font-bold block uppercase text-[9px] text-gray-500">Documento:</span>
-              <span className="text-sm font-bold">{r.tipo_documento}: {r.numero_documento}</span>
+              <label className="text-[10px] uppercase font-bold text-gray-600 tracking-wider block mb-1">
+                NACIONALIDAD
+              </label>
+              <p className="text-sm font-bold text-black leading-tight">
+                {r.nacionalidad}
+              </p>
             </div>
             <div>
-              <span className="font-bold block uppercase text-[9px] text-gray-500">Nacionalidad:</span>
-              <span className="text-sm font-bold">{r.nacionalidad}</span>
-            </div>
-            <div>
-              <span className="font-bold block uppercase text-[9px] text-gray-500">Celular:</span>
-              <span className="text-sm font-bold">{r.celular}</span>
-            </div>
-            <div>
-              <span className="font-bold block uppercase text-[9px] text-gray-500">Fecha de Nacimiento:</span>
-              <span className="text-sm font-bold">{r.fecha_nacimiento}</span>
-            </div>
-            <div>
-              <span className="font-bold block uppercase text-[9px] text-gray-500">Vencimiento Doc:</span>
-              <span className="text-sm font-bold">{r.fecha_vencimiento_documento || "-"}</span>
-            </div>
-            <div>
-              <span className="font-bold block uppercase text-[9px] text-gray-500">Edad / Genero:</span>
-              <span className="text-sm font-bold">{r.edad} años · {r.genero}</span>
-            </div>
-            <div>
-              <span className="font-bold block uppercase text-[9px] text-gray-500">Talla de Camisa:</span>
-              <span className="text-sm font-bold">{r.talla_camisa || "-"}</span>
-            </div>
-            <div className="col-span-3 pt-2 border-t border-gray-300 flex justify-between text-xs">
-              <span>
-                Estado de Pago:{" "}
-                <strong className="uppercase">
-                  {r.tipo_pago ? `PAGO ${r.tipo_pago}` : "PENDIENTE DE PAGO"}
-                </strong>
-                {r.numero_factura && (
-                  <>
-                    {" "}· Factura: <strong className="font-mono text-[11px]">{r.numero_factura}</strong>
-                  </>
+              <label className="text-[10px] uppercase font-bold text-gray-600 tracking-wider block mb-1">
+                DOCUMENTO ({r.tipo_documento})
+              </label>
+              <p className="text-sm font-bold text-black leading-tight">
+                {r.numero_documento}
+                {r.fecha_vencimiento_documento && (
+                  <span className="text-xs font-normal text-gray-600 ml-1">
+                    (Vence: {r.fecha_vencimiento_documento})
+                  </span>
                 )}
-              </span>
-              <span>ID de Registro: <span className="font-mono text-[10px]">{r.id}</span></span>
+              </p>
+            </div>
+
+            <div>
+              <label className="text-[10px] uppercase font-bold text-gray-600 tracking-wider block mb-1">
+                CELULAR
+              </label>
+              <p className="text-sm font-bold text-black leading-tight">
+                {r.celular}
+              </p>
+            </div>
+            <div>
+              <label className="text-[10px] uppercase font-bold text-gray-600 tracking-wider block mb-1">
+                FECHA DE NACIMIENTO
+              </label>
+              <p className="text-sm font-bold text-black leading-tight">
+                {r.fecha_nacimiento}
+              </p>
+            </div>
+            <div>
+              <label className="text-[10px] uppercase font-bold text-gray-600 tracking-wider block mb-1">
+                EDAD
+              </label>
+              <p className="text-sm font-bold text-black leading-tight">
+                {r.edad} años · {r.genero}
+              </p>
+            </div>
+
+            <div>
+              <label className="text-[10px] uppercase font-bold text-gray-600 tracking-wider block mb-1">
+                TALLA CAMISA
+              </label>
+              <p className="text-sm font-bold text-black leading-tight">
+                {r.talla_camisa || "Sin registrar"}
+              </p>
+            </div>
+            <div></div>
+            <div></div>
+
+            <div className="col-span-3 pt-3 border-t border-gray-300 flex items-center justify-between">
+              <span className="text-xs font-semibold text-gray-700">Pago Registrado:</span>
+              <div className="flex items-center gap-2">
+                {isPublicForm || !r.tipo_pago ? (
+                  <span className="text-xs font-bold uppercase px-3 py-1 rounded-full bg-gray-100 text-black border border-gray-400">
+                    PENDIENTE DE PAGO
+                  </span>
+                ) : (
+                  <span className="text-xs font-bold uppercase px-3 py-1 rounded-full bg-gray-200 text-black border border-gray-700">
+                    {r.tipo_pago === 'becado' ? 'BECADO' : r.tipo_pago === 'medio pago' ? 'PAGO MEDIO' : `PAGO ${r.tipo_pago.toUpperCase()}`}
+                    {r.numero_factura && ` (Factura: ${r.numero_factura})`}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* 2. Contactos */}
-        <div className="border border-black rounded-lg p-3">
-          <h3 className="text-xs font-bold uppercase bg-black text-white px-2 py-0.5 inline-block rounded mb-2">2. Informacion de Contactos y Encargados</h3>
+        {/* Sección 2: Informacion de Contacto / Encargados */}
+        <div>
+          <div className="flex items-center gap-2 mb-2.5">
+            <div className="w-1.5 h-4 bg-black rounded-full" />
+            <h4 className="text-xs font-bold uppercase tracking-wider text-black">
+              2. INFORMACION DE CONTACTO / ENCARGADOS
+            </h4>
+          </div>
+          
           <div className="grid grid-cols-2 gap-4 text-xs">
-            <div className="border-r border-gray-300 pr-4">
-              <span className="font-bold block uppercase text-[9px] text-gray-500">Contacto 1 (Principal):</span>
-              <p className="font-bold mt-1 text-sm">{r.contacto1_nombres} {r.contacto1_apellidos}</p>
-              <p className="mt-0.5">Relacion: <strong>{r.contacto1_relacion}</strong> - Telefono: <strong>{r.contacto1_telefono}</strong></p>
+            {/* Contacto 1 */}
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-300">
+              <p className="text-xs font-black text-black uppercase tracking-widest mb-2">
+                CONTACTO 1 (PRINCIPAL)
+              </p>
+              <div className="space-y-1.5">
+                <div>
+                  <span className="text-[9px] uppercase font-bold text-gray-600 block mb-0.5">NOMBRE</span>
+                  <span className="text-sm font-semibold text-black">{r.contacto1_nombres} {r.contacto1_apellidos}</span>
+                </div>
+                 <div>
+                  <span className="text-[9px] uppercase font-bold text-gray-600 block mb-0.5">RELACION / TELEFONO</span>
+                  <span className="text-sm font-semibold text-black">{r.contacto1_relacion} - {r.contacto1_telefono}</span>
+                </div>
+                <div>
+                  <span className="text-[9px] uppercase font-bold text-gray-600 block mb-0.5">DOCUMENTO DE IDENTIDAD (DUI/PASAPORTE)</span>
+                  <span className="text-sm font-semibold text-black">{r.contacto1_dui || <span style={{fontStyle:'italic', color:'#9ca3af'}}>Sin registrar</span>}</span>
+                </div>
+              </div>
             </div>
-            <div className="pl-4">
-              <span className="font-bold block uppercase text-[9px] text-gray-500">Contacto 2 (Adicional):</span>
+
+            {/* Contacto 2 */}
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-300">
+              <p className="text-xs font-black text-black uppercase tracking-widest mb-2">
+                CONTACTO 2 (ADICIONAL)
+              </p>
               {r.contacto2_nombres ? (
-                <>
-                  <p className="font-bold mt-1 text-sm">{r.contacto2_nombres} {r.contacto2_apellidos || ""}</p>
-                  <p className="mt-0.5">Relacion: <strong>{r.contacto2_relacion}</strong> - Telefono: <strong>{r.contacto2_telefono}</strong></p>
-                </>
+                <div className="space-y-1.5">
+                  <div>
+                    <span className="text-[9px] uppercase font-bold text-gray-600 block mb-0.5">NOMBRE</span>
+                    <span className="text-sm font-semibold text-black">{r.contacto2_nombres} {r.contacto2_apellidos || ""}</span>
+                  </div>
+                   <div>
+                    <span className="text-[9px] uppercase font-bold text-gray-600 block mb-0.5">RELACION / TELEFONO</span>
+                    <span className="text-sm font-semibold text-black">{r.contacto2_relacion} - {r.contacto2_telefono}</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] uppercase font-bold text-gray-600 block mb-0.5">DOCUMENTO DE IDENTIDAD (DUI/PASAPORTE)</span>
+                    <span className="text-sm font-semibold text-black">{r.contacto2_dui || <span style={{fontStyle:'italic', color:'#9ca3af'}}>Sin registrar</span>}</span>
+                  </div>
+                </div>
               ) : (
-                <p className="text-gray-500 italic mt-2">No se registro un segundo contacto.</p>
+                <p className="text-xs text-gray-500 italic flex items-center h-12">No se registro un segundo contacto.</p>
               )}
             </div>
           </div>
         </div>
 
-        {/* 3. Salud y Emergencias */}
-        <div className="border border-black rounded-lg p-3">
-          <h3 className="text-xs font-bold uppercase bg-black text-white px-2 py-0.5 inline-block rounded mb-2">3. Salud y Contacto de Emergencia</h3>
-          <div className="space-y-2 text-xs">
-            <div className="bg-gray-100 p-1.5 rounded border border-gray-300">
-              <span className="font-bold block uppercase text-[9px] text-red-700">En caso de emergencia notificar a:</span>
-              <p className="font-bold text-sm">
+        {/* Sección 3: Salud y Contacto de Emergencia */}
+        <div>
+          <div className="flex items-center gap-2 mb-2.5">
+            <div className="w-1.5 h-4 bg-black rounded-full" />
+            <h4 className="text-xs font-bold uppercase tracking-wider text-black">
+              3. SALUD Y CONTACTO DE EMERGENCIA
+            </h4>
+          </div>
+
+          <div className="space-y-3">
+            <div className="bg-gray-50 p-3.5 rounded-xl border border-gray-300">
+              <label className="text-[9px] uppercase font-black text-black tracking-widest block mb-1">
+                EN CASO DE EMERGENCIA AVISAR A:
+              </label>
+              <p className="text-sm font-bold text-black">
                 {r.emergencia_nombres} {r.emergencia_apellidos}
-                <span className="font-normal text-gray-600"> ({r.emergencia_relacion})</span> - Telefono: {r.emergencia_telefono}
+                <span className="font-normal text-gray-700 ml-1.5">({r.emergencia_relacion})</span> - <span className="font-mono">{r.emergencia_telefono}</span>
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-2.5">
-              <div>
-                <span className="font-bold block uppercase text-[9px] text-gray-500">Enfermedades:</span>
-                <p className="mt-0.5 whitespace-pre-line text-gray-800">
-                  {r.enfermedades ? (<>{r.enfermedades}{r.tratamiento_enfermedades && <span className="block mt-1 font-semibold text-gray-600">Tratamiento: {r.tratamiento_enfermedades}</span>}</>) : "Ninguna declarada."}
+
+            <div className="grid grid-cols-2 gap-4 text-xs">
+              <div className="bg-gray-50 p-3.5 rounded-xl border border-gray-300">
+                <p className="text-xs font-bold text-black mb-1 uppercase tracking-wider">ENFERMEDADES Y TRATAMIENTO</p>
+                <p className="text-xs text-gray-700 whitespace-pre-line leading-relaxed">
+                  {r.enfermedades ? (<><strong>Diagnostico:</strong> {r.enfermedades}{r.tratamiento_enfermedades && <span className="block mt-1"><strong>Tratamiento:</strong> {r.tratamiento_enfermedades}</span>}</>) : "Ninguna enfermedad registrada."}
                 </p>
               </div>
-              <div>
-                <span className="font-bold block uppercase text-[9px] text-gray-500">Alergias:</span>
-                <p className="mt-0.5 whitespace-pre-line text-gray-800">
-                  {r.alergias ? (<>{r.alergias}{r.tratamiento_alergias && <span className="block mt-1 font-semibold text-gray-600">Tratamiento: {r.tratamiento_alergias}</span>}</>) : "Ninguna declarada."}
+              <div className="bg-gray-50 p-3.5 rounded-xl border border-gray-300">
+                <p className="text-xs font-bold text-black mb-1 uppercase tracking-wider">ALERGIAS Y TRATAMIENTO</p>
+                <p className="text-xs text-gray-700 whitespace-pre-line leading-relaxed">
+                  {r.alergias ? (<><strong>Alergias:</strong> {r.alergias}{r.tratamiento_alergias && <span className="block mt-1"><strong>Tratamiento:</strong> {r.tratamiento_alergias}</span>}</>) : "Ninguna alergia registrada."}
                 </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* 4. Declaracion Jurada */}
-        <div className="border border-black rounded-lg p-3">
-          <h3 className="text-xs font-bold uppercase bg-black text-white px-2 py-0.5 inline-block rounded mb-2">4. Declaracion Jurada, Firma y Liberacion</h3>
-          <div className="text-[9px] text-gray-700 leading-normal mb-2.5 text-justify">
-            Yo, <strong>{r.declarante_nombre}</strong> con DUI: <strong>{r.declarante_dui}</strong>, por este medio BAJO JURAMENTO manifiesto: 1) Que autorizo a mi hijo/campamentero para asistir al Campamento Montesion 2026. 2) Que autorizo la toma y divulgacion oficial de fotografias/videos. 3) Me responsabilizo sobre conductas inapropiadas que afecten a terceros. 4) Me comprometo a firmar permisos migratorios correspondientes si fuera necesario. 5) Que libero de todo tipo de responsabilidad a la Mision Bautista Internacional. Acepto en su totalidad los terminos del reglamento.
+        {/* Sección 4: Declaracion y Firma Responsable */}
+        <div>
+          <div className="flex items-center gap-2 mb-2.5">
+            <div className="w-1.5 h-4 bg-black rounded-full" />
+            <h4 className="text-xs font-bold uppercase tracking-wider text-black">
+              4. DECLARACION Y FIRMA RESPONSABLE
+            </h4>
           </div>
-          <div className="flex justify-between items-end gap-6 pt-2 border-t border-gray-300">
-            <div className="text-xs">
-              <span className="font-bold block uppercase text-[9px] text-gray-500">Nombre del Declarante Responsable:</span>
-              <span className="text-sm font-bold">{r.declarante_nombre}</span>
-              <span className="font-bold block uppercase text-[9px] text-gray-500 mt-2">DUI del Declarante:</span>
-              <span className="text-sm font-semibold font-mono">{r.declarante_dui}</span>
+
+          <div className="bg-gray-50 p-4 rounded-xl border border-gray-300 flex items-center gap-6 justify-between">
+            <div className="space-y-1.5 flex-1 text-xs">
+              <div>
+                <span className="text-[9px] uppercase font-bold text-gray-600 block mb-0.5">DECLARANTE RESPONSABLE</span>
+                <span className="text-sm font-bold text-black">{r.declarante_nombre}</span>
+              </div>
+              <div>
+                <span className="text-[9px] uppercase font-bold text-gray-600 block mb-0.5">DUI DECLARANTE</span>
+                <span className="text-sm font-semibold text-black font-mono">{r.declarante_dui}</span>
+              </div>
+              <p className="text-[10px] text-black font-bold pt-1">✓ Acepto Declaracion Jurada y Reglamento</p>
             </div>
-            <div className="text-center w-44">
-              <span className="font-bold block uppercase text-[9px] text-gray-500 mb-1">Firma del Declarante:</span>
-              <div className="border border-black bg-white rounded p-0.5 flex items-center justify-center h-14 overflow-hidden">
-                <img src={r.firma_url} alt="Firma" className="max-h-full max-w-full object-contain mix-blend-multiply" />
+            
+            <div className="w-44 text-center shrink-0">
+              <span className="text-[9px] uppercase font-bold text-gray-600 block mb-1">FIRMA REGISTRADA</span>
+              <div className="border border-gray-400 bg-white rounded-lg p-1 flex items-center justify-center h-20 overflow-hidden shadow-inner">
+                {r.firma_url ? (
+                  <img src={r.firma_url} alt="Firma" className="max-h-full max-w-full object-contain mix-blend-multiply filter grayscale" />
+                ) : (
+                  <span className="text-[9px] italic text-gray-500">Sin firma</span>
+                )}
               </div>
             </div>
           </div>
+        </div>
+
+      </div>
+
+      {/* ─────────────────── PÁGINA 2: CHECKLIST DOCUMENTACIÓN ─────────────────── */}
+      <div id="pdf-page-2" className="pdf-page page-break-before pt-6 space-y-5 text-black bg-white p-2" style={{ pageBreakBefore: 'always', breakBefore: 'page' }}>
+        
+        <div className="border-b border-black pb-3 flex justify-between items-end">
+          <div>
+            <h3 className="font-extrabold text-xl text-black uppercase tracking-wide">
+              Documentacion Necesaria
+            </h3>
+            <p className="text-xs text-gray-600 mt-0.5">
+              Requisitos obligatorios para completar tu inscripcion
+            </p>
+          </div>
+          <div className="text-right flex items-center justify-end">
+            <img src={logoImg} alt="Monte Sion 2026" className="h-14 w-auto object-contain" />
+          </div>
+        </div>
+
+        <div className="bg-gray-50 p-4 rounded-xl border border-gray-300">
+          <div className="grid grid-cols-2 gap-3 text-xs">
+            <div>
+              <span className="text-[9px] uppercase font-bold text-gray-600 block mb-0.5">CAMPAMENTERO:</span>
+              <span className="text-sm font-bold text-black">{r.primer_nombre} {r.segundo_nombre || ""} {r.primer_apellido} {r.segundo_apellido || ""}</span>
+            </div>
+            <div>
+              <span className="text-[9px] uppercase font-bold text-gray-600 block mb-0.5">DOCUMENTO:</span>
+              <span className="text-sm font-bold text-black">{r.tipo_documento}: {r.numero_documento}</span>
+            </div>
+            <div>
+              <span className="text-[9px] uppercase font-bold text-gray-600 block mb-0.5">CATEGORÍA:</span>
+              <span className="text-sm font-bold text-black">{esMenor ? "MENOR DE EDAD" : "MAYOR DE EDAD"} ({r.edad} años)</span>
+            </div>
+            <div>
+              <span className="text-[9px] uppercase font-bold text-gray-600 block mb-0.5">TELÉFONO CELULAR:</span>
+              <span className="text-sm font-bold text-black">{r.celular}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-xl border border-gray-300 space-y-4">
+          <p className="text-xs font-bold text-black uppercase tracking-wide border-b border-gray-300 pb-2">
+            Para completar tu inscripción es necesario que presentes los siguientes documentos de manera obligatoria:
+          </p>
+
+          {esMenor ? (
+            <div className="space-y-4 pt-1">
+              <div className="inline-block bg-black text-white text-xs font-bold px-3 py-1 rounded-md uppercase tracking-wider">
+                Requisitos para Menores de Edad
+              </div>
+              <div className="space-y-3.5 pl-1 text-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-5 h-5 border-2 border-black rounded-sm shrink-0"></div>
+                  <span className="font-semibold text-black">Partida de nacimiento vigente</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-5 h-5 border-2 border-black rounded-sm shrink-0"></div>
+                  <span className="font-semibold text-black">Fotocopia partida</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-5 h-5 border-2 border-black rounded-sm shrink-0"></div>
+                  <span className="font-semibold text-black">DUI ambos padres</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-5 h-5 border-2 border-black rounded-sm shrink-0"></div>
+                  <span className="font-semibold text-black">Fotocopia de dui</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-5 h-5 border-2 border-black rounded-sm shrink-0"></div>
+                  <span className="font-semibold text-black">Pasaporte y copia 150%</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4 pt-1">
+              <div className="inline-block bg-black text-white text-xs font-bold px-3 py-1 rounded-md uppercase tracking-wider">
+                Requisitos para Mayores de Edad
+              </div>
+              <div className="space-y-3.5 pl-1 text-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-5 h-5 border-2 border-black rounded-sm shrink-0"></div>
+                  <span className="font-semibold text-black">Fotocopia dui</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

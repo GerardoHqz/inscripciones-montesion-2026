@@ -20,11 +20,11 @@ export function Screen3({ data, onChange, errors }: Props) {
     <div className="space-y-6">
       <SectionTitle>Contacto de Emergencia</SectionTitle>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label="Nombres" name="emergenciaNombres" value={data.emergenciaNombres} onChange={handle as React.ChangeEventHandler<HTMLInputElement>} required error={errors.emergenciaNombres} />
-        <Field label="Apellidos" name="emergenciaApellidos" value={data.emergenciaApellidos} onChange={handle as React.ChangeEventHandler<HTMLInputElement>} required error={errors.emergenciaApellidos} />
+        <Field label="Nombres" name="emergenciaNombres" autoComplete="given-name" value={data.emergenciaNombres} onChange={handle as React.ChangeEventHandler<HTMLInputElement>} required error={errors.emergenciaNombres} />
+        <Field label="Apellidos" name="emergenciaApellidos" autoComplete="family-name" value={data.emergenciaApellidos} onChange={handle as React.ChangeEventHandler<HTMLInputElement>} required error={errors.emergenciaApellidos} />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label="Telefono Celular" name="emergenciaTelefono" value={data.emergenciaTelefono} onChange={handle as React.ChangeEventHandler<HTMLInputElement>} type="tel" placeholder="0000-0000" required error={errors.emergenciaTelefono} />
+        <Field label="Telefono Celular" name="emergenciaTelefono" autoComplete="tel" value={data.emergenciaTelefono} onChange={handle as React.ChangeEventHandler<HTMLInputElement>} type="tel" placeholder="0000-0000" required error={errors.emergenciaTelefono} />
         <Autocomplete
           label="Relacion con el campamentero/a"
           name="emergenciaRelacion"

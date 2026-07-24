@@ -1,5 +1,6 @@
-import { UserPlus, ClipboardList, Tent, Sparkles, LogOut } from "lucide-react";
+import { UserPlus, ClipboardList, Sparkles, LogOut } from "lucide-react";
 import { AdminUser } from "./App";
+import bannerImg from "../imports/MONTE WEB-12.png";
 
 interface HomeProps {
   onLogout: () => void;
@@ -18,27 +19,22 @@ export default function Home({ onLogout, adminUser }: HomeProps) {
       <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
       <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-secondary/5 blur-3xl pointer-events-none" />
 
-      {/* Header */}
-      <header className="px-6 py-6 border-b border-border bg-white/60 backdrop-blur-md sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white">
-              <Tent className="w-4 h-4" />
-            </div>
-            <span className="font-bold text-base tracking-wide text-foreground font-['Outfit',sans-serif]">
-              Monte Sión 2026
-            </span>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={onLogout}
-              className="p-2 hover:bg-red-500/10 active:bg-red-500/20 text-red-600 rounded-lg transition-colors flex items-center justify-center cursor-pointer border border-red-500/10"
-              title="Cerrar sesión"
-            >
-              Logout 
-              <LogOut className="ml-2 w-4 h-4" />
-            </button>
-          </div>
+      {/* Header Banner */}
+      <header className="w-full relative overflow-hidden shadow-sm" style={{ height: "120px" }}>
+        <img
+          src={bannerImg}
+          alt="Monte Sion 2026 - Taber x Jev"
+          className="w-full h-full object-cover object-center"
+        />
+        <div className="absolute top-3 right-4 z-20">
+          <button
+            onClick={onLogout}
+            className="px-3.5 py-1.5 bg-white/90 hover:bg-white active:bg-white/80 backdrop-blur-md text-red-600 text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-1.5 cursor-pointer border border-white/60 hover:scale-105"
+            title="Cerrar sesión"
+          >
+            Logout
+            <LogOut className="w-3.5 h-3.5" />
+          </button>
         </div>
       </header>
 

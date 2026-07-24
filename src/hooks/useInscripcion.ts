@@ -143,6 +143,10 @@ export function useInscripcion() {
         if (digits.length < 8) newErrors.contacto1Telefono = "Minimo 8 digitos";
       }
 
+      if (!form.contacto1Dui.trim()) {
+        newErrors.contacto1Dui = "El documento de identidad es obligatorio";
+      }
+
       if (form.contacto2Telefono.trim()) {
         const digits = form.contacto2Telefono.replace(/[^0-9]/g, "");
         if (digits.length < 8) newErrors.contacto2Telefono = "Minimo 8 digitos";
@@ -243,10 +247,12 @@ export function useInscripcion() {
         contacto1_apellidos: esMayor ? form.primerApellido : form.contacto1Apellidos,
         contacto1_relacion: esMayor ? "Mismo" : form.contacto1Relacion,
         contacto1_telefono: esMayor ? form.celular : form.contacto1Telefono,
+        contacto1_dui: esMayor ? null : form.contacto1Dui,
         contacto2_nombres: esMayor ? null : (form.contacto2Nombres || null),
         contacto2_apellidos: esMayor ? null : (form.contacto2Apellidos || null),
         contacto2_relacion: esMayor ? null : (form.contacto2Relacion || null),
         contacto2_telefono: esMayor ? null : (form.contacto2Telefono || null),
+        contacto2_dui: esMayor ? null : (form.contacto2Dui || null),
         emergencia_nombres: form.emergenciaNombres,
         emergencia_apellidos: form.emergenciaApellidos,
         emergencia_telefono: form.emergenciaTelefono,

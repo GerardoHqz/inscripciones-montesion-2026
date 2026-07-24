@@ -1,4 +1,4 @@
-﻿import { Check, AlertCircle } from "lucide-react";
+import { Check, AlertCircle } from "lucide-react";
 import { FormData, TERMINOS } from "../../types";
 import { Field } from "./Field";
 import { SectionTitle } from "./SectionTitle";
@@ -35,7 +35,7 @@ export function Screen4({ data, onChange, esMayor, errors }: Props) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label={esMayor ? "Nombre" : "Nombre del padre/madre responsable"} name="declaranteNombre" value={data.declaranteNombre} onChange={handle} required error={errors.declaranteNombre} />
+        <Field label={esMayor ? "Nombre" : "Nombre del padre/madre responsable"} name="declaranteNombre" autoComplete="name" value={data.declaranteNombre} onChange={handle} required error={errors.declaranteNombre} />
         <Field label="DUI" name="declaranteDui" value={data.declaranteDui} onChange={handle} required error={errors.declaranteDui} />
       </div>
 
@@ -58,7 +58,7 @@ export function Screen4({ data, onChange, esMayor, errors }: Props) {
           </span>
           {errors.aceptaTerminos && (
             <span className="text-[10px] text-destructive font-semibold flex items-center gap-0.5 mt-0.5">
-              <AlertCircle className="w-3 h-3" /> {errors.aceptaTerminos}
+              <AlertCircle className="w-3.5 h-3.5" /> {errors.aceptaTerminos}
             </span>
           )}
         </div>

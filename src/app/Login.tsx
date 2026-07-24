@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "../utils/supabase";
 import { Lock, User, Eye, EyeOff, Tent, AlertCircle, RefreshCw } from "lucide-react";
+import logoImg from "../imports/MONTE WEB-12-1.png";
 
 interface LoginProps {
   onLoginSuccess: (user: { token: string; nombre: string; rol: 'admin' | 'colaborador' }) => void;
@@ -59,19 +60,22 @@ export default function Login({ onLoginSuccess }: LoginProps) {
       <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-primary/10 blur-3xl pointer-events-none" />
       <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-secondary/5 blur-3xl pointer-events-none" />
 
-      <div className="w-full max-w-md bg-white/70 backdrop-blur-md rounded-3xl border border-white/60 shadow-xl p-8 space-y-6 relative z-10">
-        {/* Logo / Header */}
-        <div className="text-center space-y-2">
-          <div className="mx-auto w-12 h-12 rounded-2xl bg-primary flex items-center justify-center text-white shadow-md transform hover:scale-105 transition-transform duration-300">
-            <Tent className="w-6 h-6" />
-          </div>
-          <h2 className="text-2xl font-black text-foreground font-['Outfit',sans-serif] tracking-tight">
-            Acceso Administrativo
-          </h2>
-          <p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold">
-            Monte Sión 2026 · Taber × Jev
-          </p>
+      <div className="w-full max-w-md bg-white/70 backdrop-blur-md rounded-3xl border border-white/60 shadow-xl overflow-hidden relative z-10">
+        {/* Banner Header */}
+        <div className="w-full overflow-hidden">
+          <img src={logoImg} alt="Monte Sion 2026" className="w-full h-auto block object-cover" />
         </div>
+
+        <div className="p-8 pt-5 space-y-6">
+          {/* Header text */}
+          <div className="text-center space-y-1">
+            <h2 className="text-2xl font-black text-foreground font-['Outfit',sans-serif] tracking-tight">
+              Inicio Sesión
+            </h2>
+            <p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold">
+              Taber × Jev
+            </p>
+          </div>
 
         {/* Error Alert */}
         {error && (
@@ -156,5 +160,6 @@ export default function Login({ onLoginSuccess }: LoginProps) {
         </div>
       </div>
     </div>
+  </div>
   );
 }

@@ -18,15 +18,17 @@ export interface Registro {
   numero_documento: string;
   fecha_vencimiento_documento: string | null;
   celular: string;
-  tipo_pago: 'completo' | 'medio pago' | null;
+  tipo_pago: 'completo' | 'medio pago' | 'becado' | null;
   contacto1_nombres: string;
   contacto1_apellidos: string;
   contacto1_relacion: string;
   contacto1_telefono: string;
+  contacto1_dui?: string | null;
   contacto2_nombres: string | null;
   contacto2_apellidos: string | null;
   contacto2_relacion: string | null;
   contacto2_telefono: string | null;
+  contacto2_dui?: string | null;
   emergencia_nombres: string;
   emergencia_apellidos: string;
   emergencia_telefono: string;
@@ -59,15 +61,17 @@ export interface FormData {
   numeroDocumento: string;
   fechaVencimientoDocumento: string;
   celular: string;
-  tipoPago: "completo" | "medio pago" | "";
+  tipoPago: "completo" | "medio pago" | "becado" | "";
   contacto1Nombres: string;
   contacto1Apellidos: string;
   contacto1Relacion: string;
   contacto1Telefono: string;
+  contacto1Dui: string;
   contacto2Nombres: string;
   contacto2Apellidos: string;
   contacto2Relacion: string;
   contacto2Telefono: string;
+  contacto2Dui: string;
   emergenciaNombres: string;
   emergenciaApellidos: string;
   emergenciaTelefono: string;
@@ -85,8 +89,8 @@ export const initialFormData: FormData = {
   primerNombre: "", segundoNombre: "", primerApellido: "", segundoApellido: "", nacionalidad: "",
   fechaNacimiento: "", edad: "", genero: "", tallaCamisa: "", tipoDocumento: "", numeroDocumento: "",
   fechaVencimientoDocumento: "", celular: "", tipoPago: "",
-  contacto1Nombres: "", contacto1Apellidos: "", contacto1Relacion: "", contacto1Telefono: "",
-  contacto2Nombres: "", contacto2Apellidos: "", contacto2Relacion: "", contacto2Telefono: "",
+  contacto1Nombres: "", contacto1Apellidos: "", contacto1Relacion: "", contacto1Telefono: "", contacto1Dui: "",
+  contacto2Nombres: "", contacto2Apellidos: "", contacto2Relacion: "", contacto2Telefono: "", contacto2Dui: "",
   emergenciaNombres: "", emergenciaApellidos: "", emergenciaTelefono: "", emergenciaRelacion: "",
   enfermedades: "", tratamientoEnfermedades: "", alergias: "", tratamientoAlergias: "",
   declaranteNombre: "", declaranteDui: "", aceptaTerminos: false,

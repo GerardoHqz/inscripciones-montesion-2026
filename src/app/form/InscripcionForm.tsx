@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronRight, ChevronLeft, Check, AlertCircle, Loader2 } from "lucide-react";
 import { useInscripcion } from "../../hooks/useInscripcion";
 import { StepBar } from "./StepBar";
@@ -9,6 +9,7 @@ import { Screen3 } from "./Screen3";
 import { Screen4 } from "./Screen4";
 import { Screen5 } from "./Screen5";
 import { NotasImportantesScreen } from "./NotasImportantesScreen";
+import bannerImg from "../../imports/MONTE WEB-12.png";
 
 const STEP_LABELS = [
   "Datos del Campamentero",
@@ -26,19 +27,24 @@ export function InscripcionForm() {
     setField, handleSign, next, back,
   } = useInscripcion();
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [step, showNotice, submitted]);
+
   return (
-    <div className="min-h-screen bg-background font-['Inter',sans-serif]">
-      <header className="bg-gradient-to-r from-primary to-secondary text-white px-4 py-5 text-center relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.05) 10px, rgba(255,255,255,0.05) 20px)" }} />
-        <div className="relative">
-          <h1 className="text-xl sm:text-2xl font-bold tracking-wide font-['Outfit',sans-serif]">Monte Sion 2026</h1>
-          <p className="text-xs sm:text-sm opacity-80 mt-0.5 font-medium tracking-widest uppercase">Taber x Jev</p>
-        </div>
+    <div className="min-h-screen bg-background font-['Inter',sans-serif] print:bg-white">
+      <header className="w-full no-print overflow-hidden" style={{ height: '120px' }}>
+        <img
+          src={bannerImg}
+          alt="Monte Sion 2026 - Taber x Jev"
+          className="w-full h-full"
+          style={{ objectFit: 'cover', objectPosition: 'center 30%' }}
+        />
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-6">
+      <main className="max-w-2xl mx-auto px-4 py-6 print:p-0 print:m-0 print:max-w-full print:bg-transparent">
         {submitted ? (
-          <div className="bg-card rounded-2xl shadow-sm border border-border p-6 sm:p-8">
+          <div className="bg-card rounded-2xl shadow-sm border border-border p-6 sm:p-8 print:p-0 print:border-none print:shadow-none print:bg-transparent">
             <SuccessScreen data={form} sig={sig} />
           </div>
         ) : showNotice ? (
@@ -100,7 +106,7 @@ export function InscripcionForm() {
             </div>
           </div>
         )}
-        <p className="text-center text-xs text-muted-foreground mt-4">
+        <p className="text-center text-xs text-muted-foreground mt-4 no-print">
           Campamento Monte Sion 2026 · 23-28 noviembre
         </p>
       </main>

@@ -20,13 +20,13 @@ export function Screen1({ data, onChange, errors }: Props) {
       <SectionTitle>Informacion del Campamentero/a</SectionTitle>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label="Primer Nombre" name="primerNombre" value={data.primerNombre} onChange={handle} required error={errors.primerNombre} />
-        <Field label="Segundo Nombre" name="segundoNombre" value={data.segundoNombre} onChange={handle} error={errors.segundoNombre} />
+        <Field label="Primer Nombre" name="primerNombre" autoComplete="given-name" value={data.primerNombre} onChange={handle} required error={errors.primerNombre} />
+        <Field label="Segundo Nombre" name="segundoNombre" autoComplete="additional-name" value={data.segundoNombre} onChange={handle} error={errors.segundoNombre} />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label="Primer Apellido" name="primerApellido" value={data.primerApellido} onChange={handle} required error={errors.primerApellido} />
-        <Field label="Segundo Apellido" name="segundoApellido" value={data.segundoApellido} onChange={handle} error={errors.segundoApellido} />
+        <Field label="Primer Apellido" name="primerApellido" autoComplete="family-name" value={data.primerApellido} onChange={handle} required error={errors.primerApellido} />
+        <Field label="Segundo Apellido" name="segundoApellido" autoComplete="family-name" value={data.segundoApellido} onChange={handle} error={errors.segundoApellido} />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -58,6 +58,7 @@ export function Screen1({ data, onChange, errors }: Props) {
         <Field
           label="Fec. Nacimiento"
           name="fechaNacimiento"
+          autoComplete="bday"
           value={data.fechaNacimiento}
           onChange={handle}
           type="date"
@@ -94,7 +95,7 @@ export function Screen1({ data, onChange, errors }: Props) {
             <option value="XXL">XXL</option>
           </select>
         </div>
-        <Field label="Celular" name="celular" value={data.celular} onChange={handle} type="tel" placeholder="0000-0000" required error={errors.celular} />
+        <Field label="Celular" name="celular" autoComplete="tel" value={data.celular} onChange={handle} type="tel" placeholder="0000-0000" required error={errors.celular} />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

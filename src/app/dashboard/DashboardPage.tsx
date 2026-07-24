@@ -8,6 +8,7 @@ import { RegistrosTable } from "./RegistrosTable";
 import { RegistroModal } from "./RegistroModal";
 import { PrintArea } from "./PrintArea";
 import { AdminUser } from "../App";
+import logoImg from "../../imports/MONTE WEB-13.png";
 import * as XLSX from "xlsx";
 import { Registro } from "../../types";
 
@@ -31,25 +32,42 @@ export default function DashboardPage({ onLogout, adminUser }: DashboardProps) {
   const [filtroGenero, setFiltroGenero] = useState("todos");
   const [filtroEdad, setFiltroEdad] = useState("todos");
   const [filtroTalla, setFiltroTalla] = useState("todos");
- 
-  const registrosFiltrados = registros.filter((reg) => {
-    const matchTab = tabActiva === "activas" ? reg.tipo_pago !== null : reg.tipo_pago === null;
-    if (!matchTab) return false;
 
+  // Navegar al home verificando que la sesión sigue activa
+  const goHome = () => {
+    const saved = localStorage.getItem("ms_admin_session");
+    if (!saved) { onLogout(); return; }
+    try {
+      const session = JSON.parse(saved);
+      if (!session?.token) { onLogout(); return; }
+    } catch {
+      onLogout(); return;
+    }
+    window.history.pushState({}, "", "/home");
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  };
+ 
+  const cumpleFiltrosFiltroBar = (reg: Registro) => {
     const nombre = `${reg.primer_nombre} ${reg.segundo_nombre || ""} ${reg.primer_apellido} ${reg.segundo_apellido || ""}`.toLowerCase();
     const q = search.toLowerCase();
-    const matchSearch = nombre.includes(q) || reg.numero_documento.toLowerCase().includes(q) || reg.celular.includes(q);
-    const matchPago = tabActiva === "solicitudes" || filtroPago === "todos" || reg.tipo_pago === filtroPago;
+    const matchSearch = !q || nombre.includes(q) || reg.numero_documento.toLowerCase().includes(q) || reg.celular.includes(q);
+    const matchPago = filtroPago === "todos" || reg.tipo_pago === filtroPago;
     const matchGenero = filtroGenero === "todos" || reg.genero === filtroGenero;
     const matchEdad = filtroEdad === "todos" ? true : filtroEdad === "menores" ? reg.edad < 18 : reg.edad >= 18;
     const matchTalla = filtroTalla === "todos" || (reg.talla_camisa || "").trim().toUpperCase() === filtroTalla.toUpperCase();
     return matchSearch && matchPago && matchGenero && matchEdad && matchTalla;
+  };
+
+  const cantActivasFiltradas = registros.filter((r) => r.tipo_pago !== null && cumpleFiltrosFiltroBar(r)).length;
+  const cantSolicitudesFiltradas = registros.filter((r) => r.tipo_pago === null && cumpleFiltrosFiltroBar(r)).length;
+
+  const registrosFiltrados = registros.filter((reg) => {
+    const matchTab = tabActiva === "activas" ? reg.tipo_pago !== null : reg.tipo_pago === null;
+    return matchTab && cumpleFiltrosFiltroBar(reg);
   });
 
-  const goHome = () => {
-    window.history.pushState({}, "", "/");
-    window.dispatchEvent(new PopStateEvent("popstate"));
-  };
+
+
 
   const handleDownloadRawData = () => {
     const dataToExport = registrosFiltrados.map((reg) => ({
@@ -73,10 +91,12 @@ export default function DashboardPage({ onLogout, adminUser }: DashboardProps) {
       "Contacto 1 Apellidos": reg.contacto1_apellidos,
       "Contacto 1 Relación": reg.contacto1_relacion,
       "Contacto 1 Teléfono": reg.contacto1_telefono,
+      "Contacto 1 DUI": reg.contacto1_dui || "",
       "Contacto 2 Nombres": reg.contacto2_nombres || "",
       "Contacto 2 Apellidos": reg.contacto2_apellidos || "",
       "Contacto 2 Relación": reg.contacto2_relacion || "",
       "Contacto 2 Teléfono": reg.contacto2_telefono || "",
+      "Contacto 2 DUI": reg.contacto2_dui || "",
       "Emergencia Nombres": reg.emergencia_nombres,
       "Emergencia Apellidos": reg.emergencia_apellidos,
       "Emergencia Relación": reg.emergencia_relacion,
@@ -137,13 +157,13 @@ export default function DashboardPage({ onLogout, adminUser }: DashboardProps) {
       <style>{`
         @media print {
           @page { margin: 0; }
-          body { background: white !important; color: black !important; margin: 1.2cm 1.4cm !important; padding: 0 !important; }
+          body { background: white !important; color: black !important; margin: 1.2cm 1.4cm !important; padding: 0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .no-print { display: none !important; }
-          #print-area { display: block !important; padding: 0 !important; margin: 0 !important; max-width: 100% !important; }
+          #print-area { display: block !important; padding: 0 !important; margin: 0 !important; max-width: 100% !important; filter: grayscale(100%) !important; }
         }
       `}</style>
 
-      <header className="bg-gradient-to-r from-primary to-secondary text-white px-6 py-4 shadow no-print">
+      <header className="bg-primary text-white px-6 py-4 shadow-md no-print">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <button onClick={goHome} className="p-2 hover:bg-white/10 rounded-lg transition-colors flex items-center justify-center text-white" title="Volver al inicio">
@@ -188,11 +208,9 @@ export default function DashboardPage({ onLogout, adminUser }: DashboardProps) {
               }`}
             >
               Inscripciones Activas
-              {registros.filter(r => r.tipo_pago !== null).length > 0 && (
-                <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary font-bold">
-                  {registros.filter(r => r.tipo_pago !== null).length}
-                </span>
-              )}
+              <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary font-bold">
+                {cantActivasFiltradas}
+              </span>
             </button>
             {adminUser.rol === "admin" && (
               <button
@@ -204,11 +222,9 @@ export default function DashboardPage({ onLogout, adminUser }: DashboardProps) {
                 }`}
               >
                 Solicitudes de Inscripción
-                {registros.filter(r => r.tipo_pago === null).length > 0 && (
-                  <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-amber-500/10 text-amber-600 font-bold">
-                    {registros.filter(r => r.tipo_pago === null).length}
-                  </span>
-                )}
+                <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-amber-500/10 text-amber-600 font-bold">
+                  {cantSolicitudesFiltradas}
+                </span>
               </button>
             )}
           </div>

@@ -112,10 +112,12 @@ export function useRegistros(token: string | undefined) {
             contacto1_apellidos: editForm.contacto1_apellidos?.trim() || "",
             contacto1_relacion: editForm.contacto1_relacion?.trim() || "",
             contacto1_telefono: editForm.contacto1_telefono?.trim() || "",
+            contacto1_dui: editForm.contacto1_dui?.trim() || null,
             contacto2_nombres: editForm.contacto2_nombres?.trim() || null,
             contacto2_apellidos: editForm.contacto2_apellidos?.trim() || null,
             contacto2_relacion: editForm.contacto2_relacion?.trim() || null,
             contacto2_telefono: editForm.contacto2_telefono?.trim() || null,
+            contacto2_dui: editForm.contacto2_dui?.trim() || null,
             emergencia_nombres: editForm.emergencia_nombres?.trim() || "",
             emergencia_apellidos: editForm.emergencia_apellidos?.trim() || "",
             emergencia_telefono: editForm.emergencia_telefono?.trim() || "",
@@ -144,7 +146,7 @@ export function useRegistros(token: string | undefined) {
     }
   };
 
-  const confirmarPago = async (id: string, tipoPago: 'completo' | 'medio pago', numeroFactura: string) => {
+  const confirmarPago = async (id: string, tipoPago: 'completo' | 'medio pago' | 'becado', numeroFactura: string) => {
     if (!numeroFactura.trim()) {
       throw new Error("El número de factura es obligatorio.");
     }

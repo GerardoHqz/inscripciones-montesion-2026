@@ -1,4 +1,4 @@
-﻿import { Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { TALLAS_DISPONIBLES } from "../../types";
 
 interface Props {
@@ -30,6 +30,7 @@ export function FilterBar({ search, setSearch, filtroPago, setFiltroPago, filtro
             <option value="todos">Todos</option>
             <option value="completo">Completo</option>
             <option value="medio pago">Medio Pago</option>
+            <option value="becado">Becado</option>
           </select>
         </div>
         <div className="flex items-center gap-2">

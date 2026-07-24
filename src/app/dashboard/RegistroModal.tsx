@@ -17,7 +17,7 @@ interface Props {
   onSaveEdit: () => void;
   onClose: () => void;
   onPrint: () => void;
-  onConfirmarPago?: (id: string, tipoPago: 'completo' | 'medio pago', numeroFactura: string) => Promise<void>;
+  onConfirmarPago?: (id: string, tipoPago: 'completo' | 'medio pago' | 'becado', numeroFactura: string) => Promise<void>;
   rol: 'admin' | 'colaborador';
 }
 
@@ -35,19 +35,24 @@ export function RegistroModal({
   onInputChange, onStartEdit, onCancelEdit, onSaveEdit, onClose, onPrint,
   onConfirmarPago, rol,
 }: Props) {
-  const [pagoTipo, setPagoTipo] = useState<'completo' | 'medio pago'>('completo');
+  const [pagoTipo, setPagoTipo] = useState<string>('pendiente');
   const [pagoFactura, setPagoFactura] = useState('');
   const [cargandoPago, setCargandoPago] = useState(false);
   const [errorPago, setErrorPago] = useState<string | null>(null);
 
   useEffect(() => {
-    setPagoTipo('completo');
+    setPagoTipo('pendiente');
     setPagoFactura('');
     setErrorPago(null);
   }, [registro.id]);
 
   const handleConfirmar = async () => {
-    if (!pagoFactura.trim()) {
+    if (pagoTipo === 'pendiente' || !pagoTipo) {
+      setErrorPago("Seleccione la modalidad de pago (Completo, Medio o Becado).");
+      return;
+    }
+    const facturaFinal = pagoFactura.trim() || (pagoTipo === 'becado' ? 'BECADO' : '');
+    if (!facturaFinal) {
       setErrorPago("Ingrese el número de factura.");
       return;
     }
@@ -55,7 +60,7 @@ export function RegistroModal({
     setCargandoPago(true);
     try {
       if (onConfirmarPago) {
-        await onConfirmarPago(registro.id, pagoTipo, pagoFactura);
+        await onConfirmarPago(registro.id, pagoTipo as any, facturaFinal);
       }
     } catch (err: any) {
       console.error(err);
@@ -152,13 +157,13 @@ export function RegistroModal({
                       <option value="">Sin registrar</option><option value="S">S</option><option value="M">M</option><option value="L">L</option><option value="XL">XL</option><option value="XXL">XXL</option>
                     </select>
                   </div>
-                  <div className="col-span-1 sm:col-span-2 md:col-span-3 pt-3 border-t border-border/60 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="col-span-1 sm:grid-cols-2 md:col-span-3 pt-3 border-t border-border/60 grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block mb-1">Modalidad de Pago</label>
-                      <select value={editForm.tipo_pago || ""} onChange={(e) => onInputChange("tipo_pago", e.target.value || null)} className="w-full px-2.5 py-1.5 border border-border rounded-lg bg-input-background text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40">
-                        <option value="">Pendiente (Sin Registrar)</option>
+                      <select value={editForm.tipo_pago || "completo"} onChange={(e) => onInputChange("tipo_pago", e.target.value)} className="w-full px-2.5 py-1.5 border border-border rounded-lg bg-input-background text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40">
                         <option value="completo">Completo</option>
                         <option value="medio pago">Medio Pago</option>
+                        <option value="becado">Becado</option>
                       </select>
                     </div>
                     <div>
@@ -186,8 +191,16 @@ export function RegistroModal({
                     <div className="col-span-1 sm:col-span-2 md:col-span-3 pt-3 border-t border-border/60 flex items-center justify-between">
                       <span className="text-xs font-semibold text-muted-foreground">Pago Registrado:</span>
                       <div className="flex items-center gap-2">
-                        <span className={`text-xs font-bold uppercase px-2.5 py-0.5 rounded-full ${registro.tipo_pago === "completo" ? "bg-secondary/15 text-secondary" : "bg-amber-500/15 text-amber-700"}`}>
-                          Pago {registro.tipo_pago}
+                        <span className={`text-xs font-bold uppercase px-2.5 py-0.5 rounded-full ${
+                          registro.tipo_pago === "completo"
+                            ? "bg-secondary/15 text-secondary"
+                            : registro.tipo_pago === "medio pago"
+                            ? "bg-amber-500/15 text-amber-700"
+                            : registro.tipo_pago === "becado"
+                            ? "bg-purple-500/15 text-purple-700"
+                            : "bg-muted text-muted-foreground"
+                        }`}>
+                          {registro.tipo_pago === "becado" ? "Becado" : registro.tipo_pago === "medio pago" ? "Medio Pago" : `Pago ${registro.tipo_pago}`}
                         </span>
                         {registro.numero_factura && (
                           <span className="text-xs font-mono text-muted-foreground">
@@ -210,11 +223,13 @@ export function RegistroModal({
                           <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Tipo Pago</label>
                           <select
                             value={pagoTipo}
-                            onChange={(e) => setPagoTipo(e.target.value as any)}
+                            onChange={(e) => setPagoTipo(e.target.value)}
                             className="w-full px-2.5 py-1.5 border border-border rounded-lg bg-white text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
                           >
+                            <option value="pendiente">Pago Pendiente</option>
                             <option value="completo">Pago Completo</option>
                             <option value="medio pago">Medio Pago</option>
+                            <option value="becado">Becado</option>
                           </select>
                         </div>
                         <div className="flex-1 w-full space-y-1">
@@ -260,11 +275,18 @@ export function RegistroModal({
                       <div><label className={labelClass}>Relacion</label><input type="text" value={editForm.contacto1_relacion || ""} onChange={(e) => onInputChange("contacto1_relacion", e.target.value)} className={inputClass} /></div>
                       <div><label className={labelClass}>Telefono</label><input type="tel" value={editForm.contacto1_telefono || ""} onChange={(e) => onInputChange("contacto1_telefono", e.target.value)} className={inputClass} /></div>
                     </div>
+                    <div><label className={labelClass}>Documento de Identidad</label><input type="text" value={editForm.contacto1_dui || ""} onChange={(e) => onInputChange("contacto1_dui", e.target.value)} className={inputClass} /></div>
                   </div>
                 ) : (
                   <div className="space-y-1.5">
                     <div><span className="text-[9px] uppercase font-bold text-muted-foreground block">Nombre</span><span className="text-sm font-semibold text-foreground">{registro.contacto1_nombres} {registro.contacto1_apellidos}</span></div>
                     <div><span className="text-[9px] uppercase font-bold text-muted-foreground block">Relacion / Telefono</span><span className="text-sm font-semibold text-foreground">{registro.contacto1_relacion} - {registro.contacto1_telefono}</span></div>
+                    <div>
+                      <span className="text-[9px] uppercase font-bold text-muted-foreground block">Documento de Identidad (DUI/Pasaporte)</span>
+                      <span className={`text-sm font-semibold ${registro.contacto1_dui ? 'text-foreground' : 'text-muted-foreground italic'}`}>
+                        {registro.contacto1_dui || 'Sin registrar'}
+                      </span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -282,11 +304,18 @@ export function RegistroModal({
                       <div><label className={labelClass}>Relacion</label><input type="text" value={editForm.contacto2_relacion || ""} onChange={(e) => onInputChange("contacto2_relacion", e.target.value)} className={inputClass} /></div>
                       <div><label className={labelClass}>Telefono</label><input type="tel" value={editForm.contacto2_telefono || ""} onChange={(e) => onInputChange("contacto2_telefono", e.target.value)} className={inputClass} /></div>
                     </div>
+                    <div><label className={labelClass}>Documento de Identidad</label><input type="text" value={editForm.contacto2_dui || ""} onChange={(e) => onInputChange("contacto2_dui", e.target.value)} className={inputClass} /></div>
                   </div>
                 ) : registro.contacto2_nombres ? (
                   <div className="space-y-1.5">
                     <div><span className="text-[9px] uppercase font-bold text-muted-foreground block">Nombre</span><span className="text-sm font-semibold text-foreground">{registro.contacto2_nombres} {registro.contacto2_apellidos || ""}</span></div>
                     <div><span className="text-[9px] uppercase font-bold text-muted-foreground block">Relacion / Telefono</span><span className="text-sm font-semibold text-foreground">{registro.contacto2_relacion} - {registro.contacto2_telefono}</span></div>
+                    <div>
+                      <span className="text-[9px] uppercase font-bold text-muted-foreground block">Documento de Identidad (DUI/Pasaporte)</span>
+                      <span className={`text-sm font-semibold ${registro.contacto2_dui ? 'text-foreground' : 'text-muted-foreground italic'}`}>
+                        {registro.contacto2_dui || 'Sin registrar'}
+                      </span>
+                    </div>
                   </div>
                 ) : (
                   <p className="text-xs text-muted-foreground italic flex items-center h-12">No se registro un segundo contacto.</p>

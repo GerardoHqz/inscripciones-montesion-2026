@@ -49,7 +49,7 @@ create table public.inscripciones (
     celular varchar(30) not null,
 
     tipo_pago varchar(30)
-        check (tipo_pago in ('completo','medio pago')),
+        check (tipo_pago in ('completo','medio pago','becado')),
 
     -- ============================
     -- Contacto principal
@@ -58,6 +58,7 @@ create table public.inscripciones (
     contacto1_apellidos varchar(150) not null,
     contacto1_relacion varchar(100) not null,
     contacto1_telefono varchar(30) not null,
+    contacto1_dui varchar(50),
 
     -- ============================
     -- Contacto secundario
@@ -66,6 +67,7 @@ create table public.inscripciones (
     contacto2_apellidos varchar(150),
     contacto2_relacion varchar(100),
     contacto2_telefono varchar(30),
+    contacto2_dui varchar(50),
 
     -- ============================
     -- Contacto de emergencia
