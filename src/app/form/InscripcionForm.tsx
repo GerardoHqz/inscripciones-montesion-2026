@@ -16,7 +16,7 @@ const STEP_LABELS = [
   "Contacto Padre/Tutor",
   "Emergencia y Salud",
   "Terminos y Declaracion",
-  "Firma",
+  // "Firma",
 ];
 
 export function InscripcionForm() {
@@ -96,11 +96,14 @@ export function InscripcionForm() {
               >
                 {isSubmitting ? (
                   <>
-                    <span>{step === 5 ? "Enviando..." : "Verificando..."}</span>
+                    <span>{step === 4 ? "Enviando..." : "Verificando..."}</span>
                     <Loader2 className="w-4 h-4 animate-spin" />
                   </>
                 ) : (
-                  <>{step === 5 ? "Enviar Inscripcion" : "Siguiente"}{step < 5 ? <ChevronRight className="w-4 h-4" /> : <Check className="w-4 h-4" />}</>
+                  <>
+                    <span>{step === 4 ? "Enviar Inscripcion" : "Siguiente"}</span>
+                    {step < 4 ? <ChevronRight className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+                  </>
                 )}
               </button>
             </div>

@@ -40,15 +40,18 @@ export function RegistroModal({
   const [cargandoPago, setCargandoPago] = useState(false);
   const [errorPago, setErrorPago] = useState<string | null>(null);
 
+  const canEditFicha = rol === 'admin' || rol === 'operador';
+  const canEditPago = rol === 'admin' || rol === 'cajero';
+
   useEffect(() => {
-    setPagoTipo('pendiente');
+    setPagoTipo(registro.tipo_pago || 'pendiente');
     setPagoFactura('');
     setErrorPago(null);
   }, [registro.id]);
 
   const handleConfirmar = async () => {
     if (pagoTipo === 'pendiente' || !pagoTipo) {
-      setErrorPago("Seleccione la modalidad de pago (Completo, Medio o Becado).");
+      setErrorPago("Seleccione una modalidad de pago válida (Completo, Medio o Becado).");
       return;
     }
     const facturaFinal = pagoFactura.trim() || (pagoTipo === 'becado' ? 'BECADO' : '');
@@ -59,57 +62,52 @@ export function RegistroModal({
     setErrorPago(null);
     setCargandoPago(true);
     try {
-      if (onConfirmarPago) {
-        await onConfirmarPago(registro.id, pagoTipo as any, facturaFinal);
-      }
+      await onConfirmarPago(registro.id, pagoTipo as 'completo' | 'medio pago' | 'becado', facturaFinal);
     } catch (err: any) {
-      console.error(err);
       setErrorPago(err.message || "Error al procesar el pago.");
     } finally {
       setCargandoPago(false);
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 backdrop-blur-xs p-4 overflow-y-auto no-print">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto border border-[#e5e7eb] flex flex-col">
+  const labelClass = "text-[10px] uppercase font-bold text-muted-foreground tracking-wider block mb-1";
+  const inputClass = "w-full px-2.5 py-1.5 border border-border rounded-lg bg-input-background text-xs font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40";
 
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 no-print">
+      <div className="bg-card w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-xl border border-border flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+        
         {/* Header */}
-        <div className="p-4 border-b border-border flex items-center justify-between sticky top-0 bg-white z-10">
+        <div className="px-6 py-4 border-b border-border flex items-center justify-between bg-muted/40">
           <div>
-            <h3 className="font-extrabold text-lg text-foreground font-['Outfit',sans-serif]">
-              {isEditing ? "Editar Inscripcion" : "Ficha de Inscripcion"}
-            </h3>
-            <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-2">
-              <span>{isEditing ? "Modificando datos del registro" : `Registrado el ${new Date(registro.created_at).toLocaleString()}`}</span>
-              {!isEditing && registro.user_ultima_actualizacion && (
-                <span className="bg-muted px-2 py-0.5 rounded text-[10px] font-bold text-muted-foreground inline-block">
-                  Modificado por: @{registro.user_ultima_actualizacion}
-                </span>
-              )}
+            <h2 className="text-lg font-bold text-foreground font-['Outfit',sans-serif]">
+              {isEditing ? "Editando Ficha de Inscripción" : "Ficha de Inscripción Detallada"}
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Registrado el {new Date(registro.created_at || Date.now()).toLocaleString()}
             </p>
           </div>
           <div className="flex items-center gap-2">
             {isEditing ? (
               <>
-                <button onClick={onSaveEdit} disabled={isSaving} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors disabled:opacity-75">
+                <button onClick={onSaveEdit} disabled={isSaving} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors disabled:opacity-75 cursor-pointer">
                   <Save className="w-3.5 h-3.5" /> {isSaving ? "Guardando..." : "Guardar"}
                 </button>
-                <button onClick={onCancelEdit} disabled={isSaving} className="px-3 py-1.5 text-xs font-bold bg-muted hover:bg-muted/80 text-foreground rounded-lg transition-colors">
+                <button onClick={onCancelEdit} disabled={isSaving} className="px-3 py-1.5 text-xs font-bold bg-muted hover:bg-muted/80 text-foreground rounded-lg transition-colors cursor-pointer">
                   Cancelar
                 </button>
               </>
             ) : (
               <>
-                {rol === 'admin' && (
-                  <button onClick={onStartEdit} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-[#1e40af] hover:bg-[#1e40af]/90 text-white rounded-lg transition-colors">
+                {canEditFicha && (
+                  <button onClick={onStartEdit} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-[#1e40af] hover:bg-[#1e40af]/90 text-white rounded-lg transition-colors cursor-pointer">
                     <Pen className="w-3.5 h-3.5" /> Editar Ficha
                   </button>
                 )}
-                <button onClick={onPrint} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-[#0d2b20] hover:bg-[#0d2b20]/90 text-white rounded-lg transition-colors">
+                <button onClick={onPrint} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-[#0d2b20] hover:bg-[#0d2b20]/90 text-white rounded-lg transition-colors cursor-pointer">
                   <Printer className="w-3.5 h-3.5" /> Imprimir Ficha
                 </button>
-                <button onClick={onClose} className="p-1.5 hover:bg-muted rounded-full transition-colors">
+                <button onClick={onClose} className="p-1.5 hover:bg-muted rounded-full transition-colors cursor-pointer">
                   <X className="w-5 h-5 text-muted-foreground" />
                 </button>
               </>
@@ -118,7 +116,7 @@ export function RegistroModal({
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-6 flex-1">
+        <div className="p-6 space-y-6 flex-1 overflow-y-auto">
           {saveError && (
             <div className="p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm flex items-center gap-2.5 animate-in fade-in duration-200">
               <AlertCircle className="w-4 h-4 flex-shrink-0" /> <span>{saveError}</span>
@@ -143,7 +141,7 @@ export function RegistroModal({
                     </select>
                   </div>
                   <div><label className={labelClass}>Número Documento</label><input type="text" value={editForm.numero_documento || ""} onChange={(e) => onInputChange("numero_documento", e.target.value)} className={inputClass} /></div>
-                  <div><label className={labelClass}>Vencimiento Documento</label><input type="date" value={editForm.fecha_vencimiento_documento || ""} onChange={(e) => onInputChange("fecha_vencimiento_documento", e.target.value)} className={inputClass} /></div>
+                  <div><label className={labelClass}>Vencimiento Documento</label><input type="date" min="2027-05-28" value={editForm.fecha_vencimiento_documento || ""} onChange={(e) => onInputChange("fecha_vencimiento_documento", e.target.value)} className={inputClass} /></div>
                   <div><label className={labelClass}>Celular</label><input type="tel" value={editForm.celular || ""} onChange={(e) => onInputChange("celular", e.target.value)} className={inputClass} /></div>
                   <div><label className={labelClass}>Fecha de Nacimiento</label><input type="date" value={editForm.fecha_nacimiento || ""} onChange={(e) => onInputChange("fecha_nacimiento", e.target.value)} className={inputClass} /></div>
                   <div><label className={labelClass}>Edad</label><input type="number" value={editForm.edad || 0} onChange={(e) => onInputChange("edad", parseInt(e.target.value, 10))} className={inputClass} /></div>
@@ -157,26 +155,28 @@ export function RegistroModal({
                       <option value="">Sin registrar</option><option value="S">S</option><option value="M">M</option><option value="L">L</option><option value="XL">XL</option><option value="XXL">XXL</option>
                     </select>
                   </div>
-                  <div className="col-span-1 sm:grid-cols-2 md:col-span-3 pt-3 border-t border-border/60 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block mb-1">Modalidad de Pago</label>
-                      <select value={editForm.tipo_pago || "completo"} onChange={(e) => onInputChange("tipo_pago", e.target.value)} className="w-full px-2.5 py-1.5 border border-border rounded-lg bg-input-background text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40">
-                        <option value="completo">Completo</option>
-                        <option value="medio pago">Medio Pago</option>
-                        <option value="becado">Becado</option>
-                      </select>
+                  {canEditPago && (
+                    <div className="col-span-1 sm:grid-cols-2 md:col-span-3 pt-3 border-t border-border/60 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block mb-1">Modalidad de Pago</label>
+                        <select value={editForm.tipo_pago || "completo"} onChange={(e) => onInputChange("tipo_pago", e.target.value)} className="w-full px-2.5 py-1.5 border border-border rounded-lg bg-input-background text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40">
+                          <option value="completo">Completo</option>
+                          <option value="medio pago">Medio Pago</option>
+                          <option value="becado">Becado</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block mb-1">Número de Factura</label>
+                        <input
+                          type="text"
+                          value={editForm.numero_factura || ""}
+                          onChange={(e) => onInputChange("numero_factura", e.target.value || null)}
+                          placeholder="Ej. FAC-00123"
+                          className="w-full px-2.5 py-1.5 border border-border rounded-lg bg-input-background text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block mb-1">Número de Factura</label>
-                      <input
-                        type="text"
-                        value={editForm.numero_factura || ""}
-                        onChange={(e) => onInputChange("numero_factura", e.target.value || null)}
-                        placeholder="Ej. FAC-00123"
-                        className="w-full px-2.5 py-1.5 border border-border rounded-lg bg-input-background text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
-                      />
-                    </div>
-                  </div>
+                  )}
                 </>
               ) : (
                 <>
@@ -209,12 +209,12 @@ export function RegistroModal({
                         )}
                       </div>
                     </div>
-                  ) : (
+                  ) : canEditPago ? (
                     <div className="col-span-1 sm:col-span-2 md:col-span-3 pt-3 border-t border-border/60 bg-amber-500/5 p-4 rounded-xl border border-amber-500/20 space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-amber-800 uppercase tracking-wide flex items-center gap-1.5">
                           <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
-                          Pendiente de Pago en Librería
+                          Registrar Pago en Librería (Taber Store)
                         </span>
                         {errorPago && <span className="text-xs text-red-600 font-semibold">{errorPago}</span>}
                       </div>
@@ -251,6 +251,16 @@ export function RegistroModal({
                           {cargandoPago ? "Procesando..." : "Confirmar e Inscribir"}
                         </button>
                       </div>
+                    </div>
+                  ) : (
+                    <div className="col-span-1 sm:col-span-2 md:col-span-3 pt-3 border-t border-border/60 bg-amber-500/5 p-3 rounded-xl border border-amber-500/20 flex items-center justify-between">
+                      <span className="text-xs font-bold text-amber-800 uppercase tracking-wide flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+                        Pendiente de Pago en Librería (Taber Store)
+                      </span>
+                      <span className="text-xs font-bold uppercase px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700">
+                        Pendiente
+                      </span>
                     </div>
                   )}
                 </>

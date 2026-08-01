@@ -98,7 +98,7 @@ export function Screen1({ data, onChange, errors }: Props) {
         <Field label="Celular" name="celular" autoComplete="tel" value={data.celular} onChange={handle} type="tel" placeholder="0000-0000" required error={errors.celular} />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
         <div className="flex flex-col gap-1">
           <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Tipo Documento<span className="text-red-500 ml-0.5">*</span>
@@ -138,6 +138,9 @@ export function Screen1({ data, onChange, errors }: Props) {
           value={data.fechaVencimientoDocumento}
           onChange={handle}
           type="date"
+          required
+          min="2027-05-28"
+          labelClassName="text-[11px] sm:text-xs whitespace-nowrap tracking-tight"
           error={errors.fechaVencimientoDocumento}
         />
       </div>

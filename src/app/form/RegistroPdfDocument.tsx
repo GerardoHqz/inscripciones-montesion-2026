@@ -1,5 +1,6 @@
 import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer";
 import { Registro } from "../../types";
+import { sanitizeText } from "../../utils/sanitize";
 import logoImg from "../../imports/MONTE WEB-13.png";
 
 const styles = StyleSheet.create({
@@ -204,7 +205,30 @@ interface PdfProps {
   isPublicForm?: boolean;
 }
 
-export function RegistroPdfDocument({ registro: r, isPublicForm = false }: PdfProps) {
+export function RegistroPdfDocument({ registro: rawRegistro, isPublicForm = false }: PdfProps) {
+  const r: Registro = {
+    ...rawRegistro,
+    primer_nombre: sanitizeText(rawRegistro.primer_nombre),
+    segundo_nombre: rawRegistro.segundo_nombre ? sanitizeText(rawRegistro.segundo_nombre) : null,
+    primer_apellido: sanitizeText(rawRegistro.primer_apellido),
+    segundo_apellido: rawRegistro.segundo_apellido ? sanitizeText(rawRegistro.segundo_apellido) : null,
+    nacionalidad: sanitizeText(rawRegistro.nacionalidad),
+    contacto1_nombres: sanitizeText(rawRegistro.contacto1_nombres),
+    contacto1_apellidos: sanitizeText(rawRegistro.contacto1_apellidos),
+    contacto1_relacion: sanitizeText(rawRegistro.contacto1_relacion),
+    contacto2_nombres: rawRegistro.contacto2_nombres ? sanitizeText(rawRegistro.contacto2_nombres) : null,
+    contacto2_apellidos: rawRegistro.contacto2_apellidos ? sanitizeText(rawRegistro.contacto2_apellidos) : null,
+    contacto2_relacion: rawRegistro.contacto2_relacion ? sanitizeText(rawRegistro.contacto2_relacion) : null,
+    emergencia_nombres: sanitizeText(rawRegistro.emergencia_nombres),
+    emergencia_apellidos: sanitizeText(rawRegistro.emergencia_apellidos),
+    emergencia_relacion: sanitizeText(rawRegistro.emergencia_relacion),
+    enfermedades: rawRegistro.enfermedades ? sanitizeText(rawRegistro.enfermedades) : null,
+    tratamiento_enfermedades: rawRegistro.tratamiento_enfermedades ? sanitizeText(rawRegistro.tratamiento_enfermedades) : null,
+    alergias: rawRegistro.alergias ? sanitizeText(rawRegistro.alergias) : null,
+    tratamiento_alergias: rawRegistro.tratamiento_alergias ? sanitizeText(rawRegistro.tratamiento_alergias) : null,
+    declarante_nombre: sanitizeText(rawRegistro.declarante_nombre),
+  };
+
   const esMenor = r.edad < 18;
 
   const renderHeader = (title: string, subtitle: string) => (
@@ -360,9 +384,9 @@ export function RegistroPdfDocument({ registro: r, isPublicForm = false }: PdfPr
             <Text style={{ fontSize: 9, fontFamily: "Helvetica-Bold" }}>✓ Acepto Declaracion Jurada y Reglamento</Text>
           </View>
           <View style={{ alignItems: "center" }}>
-            <Text style={[styles.label, { marginBottom: 4 }]}>FIRMA REGISTRADA</Text>
+            <Text style={[styles.label, { marginBottom: 4 }]}>FIRMA RESPONSABLE</Text>
             <View style={styles.signatureBox}>
-              {r.firma_url ? <Image src={r.firma_url} style={styles.signatureImage} /> : <Text style={styles.signatureEmpty}>Sin firma</Text>}
+              {r.firma_url ? <Image src={r.firma_url} style={styles.signatureImage} /> : null}
             </View>
           </View>
         </View>

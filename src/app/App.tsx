@@ -1,13 +1,16 @@
 import { useState, useEffect } from "react";
+import { Toaster } from "sonner";
 import DashboardPage from "./dashboard/DashboardPage";
 import { InscripcionForm } from "./form/InscripcionForm";
 import Home from "./Home";
 import Login from "./Login";
 
+import { RolUsuario } from "../types";
+
 export interface AdminUser {
   token: string;
   nombre: string;
-  rol: 'admin' | 'colaborador';
+  rol: RolUsuario;
 }
 
 export default function App() {
@@ -39,28 +42,18 @@ export default function App() {
     window.dispatchEvent(new PopStateEvent("popstate"));
   };
 
-  // Rutas públicas de formulario
-  if (path === "/" || path === "" || path === "/inscripcion" || path === "/nueva-inscripcion") {
-    return <InscripcionForm />;
-  }
-
-  // Rutas protegidas (Panel administrativo y login)
-  if (path === "/admin" || path === "/dashboard" || path === "/login") {
-    if (!adminUser) {
-      return <Login onLoginSuccess={handleLoginSuccess} />;
-    }
-    return <DashboardPage onLogout={handleLogout} adminUser={adminUser} />;
-  }
-
-  // Menú home si está autenticado
-  if (path === "/home" && adminUser) {
-    return <Home onLogout={handleLogout} adminUser={adminUser} />;
-  }
-
-  // Para cualquier otra ruta incorrecta o no existente, se limpia la URL a "/" y se muestra el formulario
-  if (window.location.pathname !== "/") {
-    window.history.replaceState({}, "", "/");
-  }
-
-  return <InscripcionForm />;
+  return (
+    <>
+      <Toaster position="top-right" richColors closeButton />
+      {path === "/" || path === "" || path === "/inscripcion" || path === "/nueva-inscripcion" ? (
+        <InscripcionForm />
+      ) : path === "/admin" || path === "/dashboard" || path === "/login" ? (
+        !adminUser ? <Login onLoginSuccess={handleLoginSuccess} /> : <DashboardPage onLogout={handleLogout} adminUser={adminUser} />
+      ) : path === "/home" && adminUser ? (
+        <Home onLogout={handleLogout} adminUser={adminUser} />
+      ) : (
+        <InscripcionForm />
+      )}
+    </>
+  );
 }

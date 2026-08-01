@@ -9,19 +9,22 @@ interface FieldProps {
   placeholder?: string;
   required?: boolean;
   className?: string;
+  labelClassName?: string;
   error?: string;
   autoComplete?: string;
   id?: string;
+  min?: string;
+  max?: string;
 }
 
 export function Field({
   label, name, value, onChange,
-  type = "text", placeholder = "", required = false, className = "", error, autoComplete, id,
+  type = "text", placeholder = "", required = false, className = "", labelClassName = "", error, autoComplete, id, min, max,
 }: FieldProps) {
   const inputId = id || name;
   return (
     <div className={`flex flex-col gap-1 ${className}`}>
-      <label htmlFor={inputId} className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+      <label htmlFor={inputId} className={`text-xs font-semibold uppercase tracking-wider text-muted-foreground ${labelClassName}`}>
         {label}{required && <span className="text-red-500 ml-0.5">*</span>}
       </label>
       <input
@@ -32,6 +35,8 @@ export function Field({
         onChange={onChange}
         placeholder={placeholder}
         autoComplete={autoComplete}
+        min={min}
+        max={max}
         className={`w-full px-3 py-2.5 rounded-lg border bg-input-background text-foreground text-sm focus:outline-none focus:ring-2 transition-all placeholder:text-muted-foreground/50 ${
           error
             ? "border-destructive focus:ring-destructive/20 focus:border-destructive"

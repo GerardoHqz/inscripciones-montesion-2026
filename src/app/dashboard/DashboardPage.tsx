@@ -1,6 +1,6 @@
-/// <reference types="vite/client" />
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronLeft, RefreshCw, LogOut, Download, FileSpreadsheet } from "lucide-react";
+import { toast } from "sonner";
 import { useRegistros } from "../../hooks/useRegistros";
 import { MetricCards } from "./MetricCards";
 import { FilterBar } from "./FilterBar";
@@ -25,6 +25,12 @@ export default function DashboardPage({ onLogout, adminUser }: DashboardProps) {
     handleInputChange, handleStartEdit, handleCancelEdit, handleSaveEdit,
     confirmarPago,
   } = useRegistros(adminUser.token);
+
+  useEffect(() => {
+    if (error) {
+      onLogout();
+    }
+  }, [error, onLogout]);
 
   const [tabActiva, setTabActiva] = useState<"activas" | "solicitudes">("activas");
   const [search, setSearch] = useState("");
@@ -151,15 +157,48 @@ export default function DashboardPage({ onLogout, adminUser }: DashboardProps) {
     XLSX.writeFile(workbook, "Inscripciones_Activas_Migracion_2026.xlsx");
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#f3f6f4] flex flex-col items-center justify-center gap-3 no-print font-['Inter',sans-serif]">
+        <RefreshCw className="w-8 h-8 animate-spin text-primary" />
+        <p className="text-sm font-semibold text-muted-foreground">Verificando credenciales y cargando datos...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-[#f3f6f4] text-[#1f2937] font-['Inter',sans-serif] pb-12 print:bg-white print:p-0">
 
       <style>{`
         @media print {
-          @page { margin: 0; }
-          body { background: white !important; color: black !important; margin: 1.2cm 1.4cm !important; padding: 0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          @page { margin: 0; size: letter; }
+          html, body {
+            background: white !important;
+            color: black !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          body {
+            padding: 1.2cm 1.4cm !important;
+          }
           .no-print { display: none !important; }
-          #print-area { display: block !important; padding: 0 !important; margin: 0 !important; max-width: 100% !important; filter: grayscale(100%) !important; }
+          #print-area {
+            display: block !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            max-width: 100% !important;
+            background: white !important;
+          }
+          .page-break-before {
+            page-break-before: always !important;
+            break-before: page !important;
+          }
         }
       `}</style>
 
@@ -175,7 +214,14 @@ export default function DashboardPage({ onLogout, adminUser }: DashboardProps) {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={fetchRegistros} disabled={loading} className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 active:bg-white/30 rounded-lg text-sm font-semibold transition-all">
+            <button
+              onClick={async () => {
+                await fetchRegistros();
+                toast.success("Datos actualizados correctamente.");
+              }}
+              disabled={loading}
+              className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 active:bg-white/30 rounded-lg text-sm font-semibold transition-all cursor-pointer"
+            >
               <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Actualizar datos
             </button>
             <button onClick={onLogout} className="p-2 bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-lg transition-all cursor-pointer text-white shadow-sm flex items-center justify-center" title="Cerrar sesión">
@@ -212,7 +258,7 @@ export default function DashboardPage({ onLogout, adminUser }: DashboardProps) {
                 {cantActivasFiltradas}
               </span>
             </button>
-            {adminUser.rol === "admin" && (
+            {(adminUser.rol === "admin" || adminUser.rol === "operador" || adminUser.rol === "cajero") && (
               <button
                 onClick={() => setTabActiva("solicitudes")}
                 className={`pb-3 text-sm font-bold tracking-wide relative transition-colors cursor-pointer ${
@@ -229,8 +275,8 @@ export default function DashboardPage({ onLogout, adminUser }: DashboardProps) {
             )}
           </div>
 
-          {/* Botones de Descarga Excel (Solo para Inscripciones Activas) */}
-          {tabActiva === "activas" && (
+          {/* Botones de Descarga Excel (Solo para Inscripciones Activas y roles Admin/Operador) */}
+          {tabActiva === "activas" && (adminUser.rol === "admin" || adminUser.rol === "operador") && (
             <div className="flex items-center gap-2 pb-2 sm:pb-0">
               <button
                 onClick={handleDownloadRawData}

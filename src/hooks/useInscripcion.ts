@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { sanitizeText, sanitizeOptionalText } from "../utils/sanitize";
 import { supabase } from "../utils/supabase";
 import { FormData, initialFormData, STEPS } from "../types";
 import { nacionalidades, relaciones } from "../utils/constants";
@@ -15,7 +16,7 @@ export function useInscripcion() {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const esMayor = parseInt(form.edad, 10) >= 18;
-  const visibleSteps = esMayor ? STEPS.filter((s) => s.id !== 2) : [...STEPS];
+  const visibleSteps = esMayor ? STEPS.filter((s) => s.id !== 2 && s.id !== 5) : STEPS.filter((s) => s.id !== 5);
 
   // ── Field setter with phone formatting and age calculation ──────────────────
 
@@ -110,10 +111,15 @@ export function useInscripcion() {
         newErrors.numeroDocumento = "El numero de documento es obligatorio";
       }
 
-      if (form.fechaVencimientoDocumento) {
+      if (!form.fechaVencimientoDocumento) {
+        newErrors.fechaVencimientoDocumento = "La fecha de vencimiento es obligatoria";
+      } else {
         const bd = new Date(form.fechaVencimientoDocumento);
+        const minExpiry = new Date("2027-05-28");
         if (isNaN(bd.getTime())) {
           newErrors.fechaVencimientoDocumento = "Fecha inválida";
+        } else if (bd < minExpiry) {
+          newErrors.fechaVencimientoDocumento = "El documento debe tener al menos 6 meses de vigencia (vencer a partir del 28/05/2027)";
         }
       }
 
@@ -144,7 +150,10 @@ export function useInscripcion() {
       }
 
       if (!form.contacto1Dui.trim()) {
-        newErrors.contacto1Dui = "El documento de identidad es obligatorio";
+        newErrors.contacto1Dui = "El DUI del responsable es obligatorio";
+      } else {
+        const digits = form.contacto1Dui.replace(/[^0-9]/g, "");
+        if (digits.length < 8) newErrors.contacto1Dui = "El DUI debe tener al menos 8-9 dígitos";
       }
 
       if (form.contacto2Telefono.trim()) {
@@ -177,7 +186,12 @@ export function useInscripcion() {
 
     if (currentStep === 4) {
       if (!form.declaranteNombre.trim()) newErrors.declaranteNombre = "El nombre es obligatorio";
-      if (!form.declaranteDui.trim()) newErrors.declaranteDui = "El DUI es obligatorio";
+      if (!form.declaranteDui.trim()) {
+        newErrors.declaranteDui = "El DUI del declarante es obligatorio";
+      } else {
+        const digits = form.declaranteDui.replace(/[^0-9]/g, "");
+        if (digits.length < 8) newErrors.declaranteDui = "El DUI debe tener al menos 8-9 dígitos";
+      }
       if (!form.aceptaTerminos) newErrors.aceptaTerminos = "Debe aceptar los terminos";
     }
 
@@ -203,72 +217,79 @@ export function useInscripcion() {
   };
 
   const handleSubmit = async () => {
-    if (!sig) {
-      setErrors((prev) => ({ ...prev, sig: "La firma es obligatoria para enviar la inscripcion" }));
-      return;
-    }
     setIsSubmitting(true);
     setSubmitError(null);
 
     try {
-      const blob = base64ToBlob(sig);
-      const sanitizedNombre = form.primerNombre.trim().replace(/[^a-zA-Z0-9]/g, "_");
-      const sanitizedApellido = form.primerApellido.trim().replace(/[^a-zA-Z0-9]/g, "_");
-      const fileName = `firma_${sanitizedNombre}_${sanitizedApellido}_${Date.now()}.png`;
+      let publicUrl = "";
+      let uploadedFileName = "";
+      if (sig) {
+        try {
+          const blob = base64ToBlob(sig);
+          const sanitizedNombre = form.primerNombre.trim().replace(/[^a-zA-Z0-9]/g, "_");
+          const sanitizedApellido = form.primerApellido.trim().replace(/[^a-zA-Z0-9]/g, "_");
+          uploadedFileName = `firma_${sanitizedNombre}_${sanitizedApellido}_${Date.now()}.png`;
 
-      const { error: uploadError } = await supabase.storage
-        .from("firmas")
-        .upload(fileName, blob, { contentType: "image/png", cacheControl: "3600", upsert: false });
+          const { error: uploadError } = await supabase.storage
+            .from("firmas")
+            .upload(uploadedFileName, blob, { contentType: "image/png", cacheControl: "3600", upsert: false });
 
-      if (uploadError) throw new Error(`Error al subir la firma: ${uploadError.message}`);
-
-      const { data: { publicUrl } } = supabase.storage.from("firmas").getPublicUrl(fileName);
+          if (!uploadError) {
+            const { data: { publicUrl: url } } = supabase.storage.from("firmas").getPublicUrl(uploadedFileName);
+            publicUrl = url;
+          }
+        } catch (e) {
+          console.error("Error al subir firma opcional:", e);
+        }
+      }
 
       const formattedFechaNacimiento = form.fechaNacimiento;
       const formattedFechaVencimiento = form.fechaVencimientoDocumento || null;
 
       const { error: insertError } = await supabase.from("inscripciones").insert([{
-        primer_nombre: form.primerNombre,
-        segundo_nombre: form.segundoNombre || null,
-        primer_apellido: form.primerApellido,
-        segundo_apellido: form.segundoApellido || null,
-        nacionalidad: form.nacionalidad,
+        primer_nombre: sanitizeText(form.primerNombre),
+        segundo_nombre: sanitizeOptionalText(form.segundoNombre),
+        primer_apellido: sanitizeText(form.primerApellido),
+        segundo_apellido: sanitizeOptionalText(form.segundoApellido),
+        nacionalidad: sanitizeText(form.nacionalidad),
         fecha_nacimiento: formattedFechaNacimiento,
         edad: parseInt(form.edad, 10),
         genero: form.genero,
-        talla_camisa: form.tallaCamisa || null,
+        talla_camisa: sanitizeOptionalText(form.tallaCamisa),
         tipo_documento: form.tipoDocumento,
-        numero_documento: form.numeroDocumento,
+        numero_documento: sanitizeText(form.numeroDocumento),
         fecha_vencimiento_documento: formattedFechaVencimiento,
-        celular: form.celular,
+        celular: sanitizeText(form.celular),
         tipo_pago: null,
         numero_factura: null,
-        contacto1_nombres: esMayor ? form.primerNombre : form.contacto1Nombres,
-        contacto1_apellidos: esMayor ? form.primerApellido : form.contacto1Apellidos,
-        contacto1_relacion: esMayor ? "Mismo" : form.contacto1Relacion,
-        contacto1_telefono: esMayor ? form.celular : form.contacto1Telefono,
-        contacto1_dui: esMayor ? null : form.contacto1Dui,
-        contacto2_nombres: esMayor ? null : (form.contacto2Nombres || null),
-        contacto2_apellidos: esMayor ? null : (form.contacto2Apellidos || null),
-        contacto2_relacion: esMayor ? null : (form.contacto2Relacion || null),
-        contacto2_telefono: esMayor ? null : (form.contacto2Telefono || null),
-        contacto2_dui: esMayor ? null : (form.contacto2Dui || null),
-        emergencia_nombres: form.emergenciaNombres,
-        emergencia_apellidos: form.emergenciaApellidos,
-        emergencia_telefono: form.emergenciaTelefono,
-        emergencia_relacion: form.emergenciaRelacion,
-        enfermedades: form.enfermedades || null,
-        tratamiento_enfermedades: form.tratamientoEnfermedades || null,
-        alergias: form.alergias || null,
-        tratamiento_alergias: form.tratamientoAlergias || null,
-        declarante_nombre: form.declaranteNombre,
-        declarante_dui: form.declaranteDui,
+        contacto1_nombres: esMayor ? sanitizeText(form.primerNombre) : sanitizeText(form.contacto1Nombres),
+        contacto1_apellidos: esMayor ? sanitizeText(form.primerApellido) : sanitizeText(form.contacto1Apellidos),
+        contacto1_relacion: esMayor ? "MISMO" : sanitizeText(form.contacto1Relacion),
+        contacto1_telefono: esMayor ? sanitizeText(form.celular) : sanitizeText(form.contacto1Telefono),
+        contacto1_dui: esMayor ? null : sanitizeOptionalText(form.contacto1Dui),
+        contacto2_nombres: esMayor ? null : sanitizeOptionalText(form.contacto2Nombres),
+        contacto2_apellidos: esMayor ? null : sanitizeOptionalText(form.contacto2Apellidos),
+        contacto2_relacion: esMayor ? null : sanitizeOptionalText(form.contacto2Relacion),
+        contacto2_telefono: esMayor ? null : sanitizeOptionalText(form.contacto2Telefono),
+        contacto2_dui: esMayor ? null : sanitizeOptionalText(form.contacto2Dui),
+        emergencia_nombres: sanitizeText(form.emergenciaNombres),
+        emergencia_apellidos: sanitizeText(form.emergenciaApellidos),
+        emergencia_telefono: sanitizeText(form.emergenciaTelefono),
+        emergencia_relacion: sanitizeText(form.emergenciaRelacion),
+        enfermedades: sanitizeOptionalText(form.enfermedades),
+        tratamiento_enfermedades: sanitizeOptionalText(form.tratamientoEnfermedades),
+        alergias: sanitizeOptionalText(form.alergias),
+        tratamiento_alergias: sanitizeOptionalText(form.tratamientoAlergias),
+        declarante_nombre: sanitizeText(form.declaranteNombre),
+        declarante_dui: sanitizeText(form.declaranteDui),
         acepta_terminos: form.aceptaTerminos,
         firma_url: publicUrl,
       }]);
 
       if (insertError) {
-        await supabase.storage.from("firmas").remove([fileName]);
+        if (uploadedFileName) {
+          await supabase.storage.from("firmas").remove([uploadedFileName]);
+        }
         if (insertError.code === "23505" || insertError.message?.includes("duplicate") || insertError.message?.includes("idx_inscripciones_numero_documento")) {
           throw new Error("El número de documento ya está registrado para otra inscripción.");
         }
@@ -320,7 +341,7 @@ export function useInscripcion() {
     if (step === 1 && esMayor) {
       setStep(3);
       setSubmitError(null);
-    } else if (step < 5) {
+    } else if (step < 4) {
       setStep(step + 1);
       setSubmitError(null);
     } else {

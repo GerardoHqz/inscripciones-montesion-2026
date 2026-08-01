@@ -1,4 +1,5 @@
 import { Registro } from "../../types";
+import { sanitizeText } from "../../utils/sanitize";
 import logoImg from "../../imports/MONTE WEB-13.png";
 
 interface Props {
@@ -6,7 +7,30 @@ interface Props {
   isPublicForm?: boolean;
 }
 
-export function PrintArea({ registro: r, isPublicForm = false }: Props) {
+export function PrintArea({ registro: rawRegistro, isPublicForm = false }: Props) {
+  const r: Registro = {
+    ...rawRegistro,
+    primer_nombre: sanitizeText(rawRegistro.primer_nombre),
+    segundo_nombre: rawRegistro.segundo_nombre ? sanitizeText(rawRegistro.segundo_nombre) : null,
+    primer_apellido: sanitizeText(rawRegistro.primer_apellido),
+    segundo_apellido: rawRegistro.segundo_apellido ? sanitizeText(rawRegistro.segundo_apellido) : null,
+    nacionalidad: sanitizeText(rawRegistro.nacionalidad),
+    contacto1_nombres: sanitizeText(rawRegistro.contacto1_nombres),
+    contacto1_apellidos: sanitizeText(rawRegistro.contacto1_apellidos),
+    contacto1_relacion: sanitizeText(rawRegistro.contacto1_relacion),
+    contacto2_nombres: rawRegistro.contacto2_nombres ? sanitizeText(rawRegistro.contacto2_nombres) : null,
+    contacto2_apellidos: rawRegistro.contacto2_apellidos ? sanitizeText(rawRegistro.contacto2_apellidos) : null,
+    contacto2_relacion: rawRegistro.contacto2_relacion ? sanitizeText(rawRegistro.contacto2_relacion) : null,
+    emergencia_nombres: sanitizeText(rawRegistro.emergencia_nombres),
+    emergencia_apellidos: sanitizeText(rawRegistro.emergencia_apellidos),
+    emergencia_relacion: sanitizeText(rawRegistro.emergencia_relacion),
+    enfermedades: rawRegistro.enfermedades ? sanitizeText(rawRegistro.enfermedades) : null,
+    tratamiento_enfermedades: rawRegistro.tratamiento_enfermedades ? sanitizeText(rawRegistro.tratamiento_enfermedades) : null,
+    alergias: rawRegistro.alergias ? sanitizeText(rawRegistro.alergias) : null,
+    tratamiento_alergias: rawRegistro.tratamiento_alergias ? sanitizeText(rawRegistro.tratamiento_alergias) : null,
+    declarante_nombre: sanitizeText(rawRegistro.declarante_nombre),
+  };
+
   const esMenor = r.edad < 18;
 
   return (
@@ -242,13 +266,11 @@ export function PrintArea({ registro: r, isPublicForm = false }: Props) {
             </div>
             
             <div className="w-44 text-center shrink-0">
-              <span className="text-[9px] uppercase font-bold text-gray-600 block mb-1">FIRMA REGISTRADA</span>
+              <span className="text-[9px] uppercase font-bold text-gray-600 block mb-1">FIRMA RESPONSABLE</span>
               <div className="border border-gray-400 bg-white rounded-lg p-1 flex items-center justify-center h-20 overflow-hidden shadow-inner">
                 {r.firma_url ? (
                   <img src={r.firma_url} alt="Firma" className="max-h-full max-w-full object-contain mix-blend-multiply filter grayscale" />
-                ) : (
-                  <span className="text-[9px] italic text-gray-500">Sin firma</span>
-                )}
+                ) : null}
               </div>
             </div>
           </div>

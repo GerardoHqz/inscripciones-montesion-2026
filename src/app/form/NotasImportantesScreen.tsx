@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AlertCircle, Store, CheckCircle2, ArrowRight, Check, Calendar } from "lucide-react";
+import { AlertCircle, Store, CheckCircle2, ArrowRight, Check, Calendar, FileText } from "lucide-react";
 
 interface Props {
   onStart: () => void;
@@ -39,7 +39,22 @@ export function NotasImportantesScreen({ onStart }: Props) {
           </div>
         </div>
 
-        {/* Tarjeta 2: Registro de Datos */}
+        {/* Tarjeta 2: Vigencia Mínima del Documento */}
+        <div className="flex items-start gap-4 p-4 rounded-xl bg-blue-500/5 border border-blue-500/20 shadow-2xs">
+          <div className="p-2.5 bg-blue-500/15 text-blue-700 rounded-lg shrink-0 mt-0.5">
+            <FileText className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-bold text-sm text-blue-950 font-['Outfit',sans-serif]">
+              Vigencia Mínima de Documento (DUI / Pasaporte)
+            </h3>
+            <p className="text-xs text-blue-900/90 mt-0.5 leading-relaxed font-medium">
+              Por regulaciones de viaje, tu DUI o Pasaporte debe contar con al menos <strong className="font-extrabold text-blue-950">6 meses de vigencia</strong> posteriores a la fecha del campamento (debe vencer <strong className="font-extrabold text-blue-950">a partir del 28 de mayo de 2027</strong>).
+            </p>
+          </div>
+        </div>
+
+        {/* Tarjeta 3: Registro de Datos */}
         <div className="flex items-start gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200/80 shadow-2xs">
           <div className="p-2.5 bg-primary/10 text-primary rounded-lg shrink-0 mt-0.5">
             <CheckCircle2 className="w-5 h-5" />

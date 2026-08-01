@@ -41,7 +41,7 @@ export function Screen2({ data, onChange, esMayor, errors }: Props) {
           <Field label="Telefono Celular" name="contacto1Telefono" autoComplete="tel" value={data.contacto1Telefono} onChange={handle} type="tel" placeholder="0000-0000" required error={errors.contacto1Telefono} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Documento de Identidad" name="contacto1Dui" value={data.contacto1Dui} onChange={handle} required error={errors.contacto1Dui} />
+          <Field label="Documento de Identidad (DUI)" name="contacto1Dui" value={data.contacto1Dui} onChange={handle} placeholder="Ej. 00000000-0" required error={errors.contacto1Dui} />
         </div>
       </div>
 

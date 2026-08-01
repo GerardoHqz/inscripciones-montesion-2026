@@ -1,9 +1,9 @@
-import { Users, CreditCard, Clock, GraduationCap, UserCheck, ShieldCheck } from "lucide-react";
-import { Registro } from "../../types";
+import { Users, CreditCard, Clock, GraduationCap, UserCheck, ShieldCheck, AlertCircle } from "lucide-react";
+import { Registro, RolUsuario } from "../../types";
 
 interface Props {
   registros: Registro[];
-  rol: 'admin' | 'colaborador';
+  rol: RolUsuario;
 }
 
 export function MetricCards({ registros }: Props) {

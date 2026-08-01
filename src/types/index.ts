@@ -1,5 +1,9 @@
 import { User, Users, AlertCircle, FileText, PenLine } from "lucide-react";
 
+// ─── Roles ─────────────────────────────────────────────────────────────
+
+export type RolUsuario = 'admin' | 'operador' | 'libreria' | 'colaborador';
+
 // ─── Registro (Dashboard) ─────────────────────────────────────────────────────
 
 export interface Registro {
@@ -103,7 +107,7 @@ export const STEPS = [
   { id: 2, label: "Contacto",     icon: Users },
   { id: 3, label: "Emergencia",   icon: AlertCircle },
   { id: 4, label: "Terminos",     icon: FileText },
-  { id: 5, label: "Firma",        icon: PenLine },
+  // { id: 5, label: "Firma",        icon: PenLine }, // Oculto: se firmará físicamente
 ] as const;
 
 export type Step = typeof STEPS[number];

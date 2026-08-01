@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { sanitizeText, sanitizeOptionalText } from "../utils/sanitize";
+import { toast } from "sonner";
 import { supabase } from "../utils/supabase";
 import { Registro } from "../types";
 
@@ -83,6 +85,17 @@ export function useRegistros(token: string | undefined) {
     if (!editForm.celular?.trim()) { fail("El celular es obligatorio."); return; }
     if (!editForm.tipo_documento) { fail("El tipo de documento es obligatorio."); return; }
     if (!editForm.numero_documento?.trim()) { fail("El número de documento es obligatorio."); return; }
+    if (!editForm.fecha_vencimiento_documento) {
+      fail("La fecha de vencimiento del documento es obligatoria.");
+      return;
+    } else {
+      const expiry = new Date(editForm.fecha_vencimiento_documento);
+      const minExpiry = new Date("2027-05-28");
+      if (isNaN(expiry.getTime()) || expiry < minExpiry) {
+        fail("El documento debe tener al menos 6 meses de vigencia (vencer a partir del 28/05/2027).");
+        return;
+      }
+    }
     if (!editForm.contacto1_nombres?.trim() || !editForm.contacto1_apellidos?.trim()) { fail("Nombres y apellidos del contacto 1 son obligatorios."); return; }
     if (!editForm.contacto1_telefono?.trim()) { fail("El teléfono del contacto 1 es obligatorio."); return; }
     if (!editForm.emergencia_nombres?.trim() || !editForm.emergencia_apellidos?.trim() || !editForm.emergencia_telefono?.trim()) { fail("La información de emergencia es obligatoria."); return; }
@@ -94,41 +107,41 @@ export function useRegistros(token: string | undefined) {
           p_token: token,
           p_id: selected.id,
           p_datos: {
-            primer_nombre: editForm.primer_nombre?.trim() || "",
-            segundo_nombre: editForm.segundo_nombre?.trim() || null,
-            primer_apellido: editForm.primer_apellido?.trim() || "",
-            segundo_apellido: editForm.segundo_apellido?.trim() || null,
-            nacionalidad: editForm.nacionalidad?.trim() || "",
+            primer_nombre: sanitizeText(editForm.primer_nombre),
+            segundo_nombre: sanitizeOptionalText(editForm.segundo_nombre),
+            primer_apellido: sanitizeText(editForm.primer_apellido),
+            segundo_apellido: sanitizeOptionalText(editForm.segundo_apellido),
+            nacionalidad: sanitizeText(editForm.nacionalidad),
             genero: editForm.genero,
             fecha_nacimiento: editForm.fecha_nacimiento,
             edad: editForm.edad,
-            talla_camisa: editForm.talla_camisa || null,
+            talla_camisa: sanitizeOptionalText(editForm.talla_camisa),
             tipo_documento: editForm.tipo_documento,
-            numero_documento: editForm.numero_documento?.trim() || "",
+            numero_documento: sanitizeText(editForm.numero_documento),
             fecha_vencimiento_documento: editForm.fecha_vencimiento_documento || null,
-            celular: editForm.celular?.trim() || "",
+            celular: sanitizeText(editForm.celular),
             tipo_pago: editForm.tipo_pago || null,
-            contacto1_nombres: editForm.contacto1_nombres?.trim() || "",
-            contacto1_apellidos: editForm.contacto1_apellidos?.trim() || "",
-            contacto1_relacion: editForm.contacto1_relacion?.trim() || "",
-            contacto1_telefono: editForm.contacto1_telefono?.trim() || "",
-            contacto1_dui: editForm.contacto1_dui?.trim() || null,
-            contacto2_nombres: editForm.contacto2_nombres?.trim() || null,
-            contacto2_apellidos: editForm.contacto2_apellidos?.trim() || null,
-            contacto2_relacion: editForm.contacto2_relacion?.trim() || null,
-            contacto2_telefono: editForm.contacto2_telefono?.trim() || null,
-            contacto2_dui: editForm.contacto2_dui?.trim() || null,
-            emergencia_nombres: editForm.emergencia_nombres?.trim() || "",
-            emergencia_apellidos: editForm.emergencia_apellidos?.trim() || "",
-            emergencia_telefono: editForm.emergencia_telefono?.trim() || "",
-            emergencia_relacion: editForm.emergencia_relacion?.trim() || "",
-            enfermedades: editForm.enfermedades?.trim() || null,
-            tratamiento_enfermedades: editForm.tratamiento_enfermedades?.trim() || null,
-            alergias: editForm.alergias?.trim() || null,
-            tratamiento_alergias: editForm.tratamiento_alergias?.trim() || null,
-            declarante_nombre: editForm.declarante_nombre?.trim() || "",
-            declarante_dui: editForm.declarante_dui?.trim() || "",
-            numero_factura: editForm.numero_factura?.trim() || null,
+            contacto1_nombres: sanitizeText(editForm.contacto1_nombres),
+            contacto1_apellidos: sanitizeText(editForm.contacto1_apellidos),
+            contacto1_relacion: sanitizeText(editForm.contacto1_relacion),
+            contacto1_telefono: sanitizeText(editForm.contacto1_telefono),
+            contacto1_dui: sanitizeOptionalText(editForm.contacto1_dui),
+            contacto2_nombres: sanitizeOptionalText(editForm.contacto2_nombres),
+            contacto2_apellidos: sanitizeOptionalText(editForm.contacto2_apellidos),
+            contacto2_relacion: sanitizeOptionalText(editForm.contacto2_relacion),
+            contacto2_telefono: sanitizeOptionalText(editForm.contacto2_telefono),
+            contacto2_dui: sanitizeOptionalText(editForm.contacto2_dui),
+            emergencia_nombres: sanitizeText(editForm.emergencia_nombres),
+            emergencia_apellidos: sanitizeText(editForm.emergencia_apellidos),
+            emergencia_telefono: sanitizeText(editForm.emergencia_telefono),
+            emergencia_relacion: sanitizeText(editForm.emergencia_relacion),
+            enfermedades: sanitizeOptionalText(editForm.enfermedades),
+            tratamiento_enfermedades: sanitizeOptionalText(editForm.tratamiento_enfermedades),
+            alergias: sanitizeOptionalText(editForm.alergias),
+            tratamiento_alergias: sanitizeOptionalText(editForm.tratamiento_alergias),
+            declarante_nombre: sanitizeText(editForm.declarante_nombre),
+            declarante_dui: sanitizeText(editForm.declarante_dui),
+            numero_factura: sanitizeOptionalText(editForm.numero_factura),
           }
         });
  
@@ -138,6 +151,7 @@ export function useRegistros(token: string | undefined) {
       setRegistros((prev) => prev.map((r) => (r.id === selected.id ? updated : r)));
       setSelected(updated);
       setIsEditing(false);
+      toast.success("¡Ficha actualizada con éxito!");
     } catch (err: any) {
       console.error(err);
       setSaveError(err.message || "Ocurrio un error al guardar los cambios.");
@@ -172,6 +186,7 @@ export function useRegistros(token: string | undefined) {
         ? { ...prev, tipo_pago: tipoPago, numero_factura: numeroFactura.trim() }
         : prev
     );
+    toast.success("¡Pago e inscripción registrados con éxito!");
   };
 
   return {
