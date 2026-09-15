@@ -30,6 +30,7 @@ export function FilterBar({ search, setSearch, filtroPago, setFiltroPago, filtro
             <option value="todos">Todos</option>
             <option value="completo">Completo</option>
             <option value="medio pago">Medio Pago</option>
+            <option value="media beca">Media Beca</option>
             <option value="becado">Becado</option>
           </select>
         </div>

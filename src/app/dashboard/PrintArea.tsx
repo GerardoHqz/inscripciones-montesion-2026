@@ -139,7 +139,7 @@ export function PrintArea({ registro: rawRegistro, isPublicForm = false }: Props
                   </span>
                 ) : (
                   <span className="text-xs font-bold uppercase px-3 py-1 rounded-full bg-gray-200 text-black border border-gray-700">
-                    {r.tipo_pago === 'becado' ? 'BECADO' : r.tipo_pago === 'medio pago' ? 'PAGO MEDIO' : `PAGO ${r.tipo_pago.toUpperCase()}`}
+                    {r.tipo_pago === 'becado' ? 'BECADO' : r.tipo_pago === 'media beca' ? 'MEDIA BECA' : r.tipo_pago === 'medio pago' ? 'PAGO MEDIO' : `PAGO ${r.tipo_pago.toUpperCase()}`}
                     {r.numero_factura && ` (Factura: ${r.numero_factura})`}
                   </span>
                 )}

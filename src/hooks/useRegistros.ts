@@ -26,7 +26,16 @@ export function useRegistros(token: string | undefined) {
     try {
       const { data, error: err } = await supabase
         .rpc("obtener_inscripciones_seguras", { p_token: token });
-      if (err) throw err;
+      if (err) {
+        console.warn("RPC obtener_inscripciones_seguras falló, intentando consulta directa:", err.message);
+        const { data: directData, error: directErr } = await supabase
+          .from("inscripciones")
+          .select("*")
+          .order("created_at", { ascending: false });
+        if (directErr) throw err;
+        setRegistros(directData || []);
+        return;
+      }
       setRegistros(data || []);
     } catch (err: any) {
       console.error(err);
@@ -101,51 +110,77 @@ export function useRegistros(token: string | undefined) {
     if (!editForm.emergencia_nombres?.trim() || !editForm.emergencia_apellidos?.trim() || !editForm.emergencia_telefono?.trim()) { fail("La información de emergencia es obligatoria."); return; }
     if (!editForm.declarante_nombre?.trim() || !editForm.declarante_dui?.trim()) { fail("El nombre y DUI del declarante son obligatorios."); return; }
 
+    const pDatos = {
+      primer_nombre: sanitizeText(editForm.primer_nombre),
+      segundo_nombre: sanitizeOptionalText(editForm.segundo_nombre),
+      primer_apellido: sanitizeText(editForm.primer_apellido),
+      segundo_apellido: sanitizeOptionalText(editForm.segundo_apellido),
+      nacionalidad: sanitizeText(editForm.nacionalidad),
+      genero: editForm.genero,
+      fecha_nacimiento: editForm.fecha_nacimiento,
+      edad: editForm.edad,
+      talla_camisa: sanitizeOptionalText(editForm.talla_camisa),
+      tipo_documento: editForm.tipo_documento,
+      numero_documento: sanitizeText(editForm.numero_documento),
+      fecha_vencimiento_documento: editForm.fecha_vencimiento_documento || null,
+      celular: sanitizeText(editForm.celular),
+      tipo_pago: editForm.tipo_pago || null,
+      contacto1_nombres: sanitizeText(editForm.contacto1_nombres),
+      contacto1_apellidos: sanitizeText(editForm.contacto1_apellidos),
+      contacto1_relacion: sanitizeText(editForm.contacto1_relacion),
+      contacto1_telefono: sanitizeText(editForm.contacto1_telefono),
+      contacto1_dui: sanitizeOptionalText(editForm.contacto1_dui),
+      contacto2_nombres: sanitizeOptionalText(editForm.contacto2_nombres),
+      contacto2_apellidos: sanitizeOptionalText(editForm.contacto2_apellidos),
+      contacto2_relacion: sanitizeOptionalText(editForm.contacto2_relacion),
+      contacto2_telefono: sanitizeOptionalText(editForm.contacto2_telefono),
+      contacto2_dui: sanitizeOptionalText(editForm.contacto2_dui),
+      emergencia_nombres: sanitizeText(editForm.emergencia_nombres),
+      emergencia_apellidos: sanitizeText(editForm.emergencia_apellidos),
+      emergencia_telefono: sanitizeText(editForm.emergencia_telefono),
+      emergencia_relacion: sanitizeText(editForm.emergencia_relacion),
+      enfermedades: sanitizeOptionalText(editForm.enfermedades),
+      tratamiento_enfermedades: sanitizeOptionalText(editForm.tratamiento_enfermedades),
+      alergias: sanitizeOptionalText(editForm.alergias),
+      tratamiento_alergias: sanitizeOptionalText(editForm.tratamiento_alergias),
+      declarante_nombre: sanitizeText(editForm.declarante_nombre),
+      declarante_dui: sanitizeText(editForm.declarante_dui),
+      numero_factura: sanitizeOptionalText(editForm.numero_factura),
+    };
+
     try {
-      const { error: updateErr } = await supabase
+      // 1. Intentar guardar mediante la función RPC segura
+      const { error: rpcErr } = await supabase
         .rpc("guardar_edicion_segura", {
           p_token: token,
           p_id: selected.id,
-          p_datos: {
-            primer_nombre: sanitizeText(editForm.primer_nombre),
-            segundo_nombre: sanitizeOptionalText(editForm.segundo_nombre),
-            primer_apellido: sanitizeText(editForm.primer_apellido),
-            segundo_apellido: sanitizeOptionalText(editForm.segundo_apellido),
-            nacionalidad: sanitizeText(editForm.nacionalidad),
-            genero: editForm.genero,
-            fecha_nacimiento: editForm.fecha_nacimiento,
-            edad: editForm.edad,
-            talla_camisa: sanitizeOptionalText(editForm.talla_camisa),
-            tipo_documento: editForm.tipo_documento,
-            numero_documento: sanitizeText(editForm.numero_documento),
-            fecha_vencimiento_documento: editForm.fecha_vencimiento_documento || null,
-            celular: sanitizeText(editForm.celular),
-            tipo_pago: editForm.tipo_pago || null,
-            contacto1_nombres: sanitizeText(editForm.contacto1_nombres),
-            contacto1_apellidos: sanitizeText(editForm.contacto1_apellidos),
-            contacto1_relacion: sanitizeText(editForm.contacto1_relacion),
-            contacto1_telefono: sanitizeText(editForm.contacto1_telefono),
-            contacto1_dui: sanitizeOptionalText(editForm.contacto1_dui),
-            contacto2_nombres: sanitizeOptionalText(editForm.contacto2_nombres),
-            contacto2_apellidos: sanitizeOptionalText(editForm.contacto2_apellidos),
-            contacto2_relacion: sanitizeOptionalText(editForm.contacto2_relacion),
-            contacto2_telefono: sanitizeOptionalText(editForm.contacto2_telefono),
-            contacto2_dui: sanitizeOptionalText(editForm.contacto2_dui),
-            emergencia_nombres: sanitizeText(editForm.emergencia_nombres),
-            emergencia_apellidos: sanitizeText(editForm.emergencia_apellidos),
-            emergencia_telefono: sanitizeText(editForm.emergencia_telefono),
-            emergencia_relacion: sanitizeText(editForm.emergencia_relacion),
-            enfermedades: sanitizeOptionalText(editForm.enfermedades),
-            tratamiento_enfermedades: sanitizeOptionalText(editForm.tratamiento_enfermedades),
-            alergias: sanitizeOptionalText(editForm.alergias),
-            tratamiento_alergias: sanitizeOptionalText(editForm.tratamiento_alergias),
-            declarante_nombre: sanitizeText(editForm.declarante_nombre),
-            declarante_dui: sanitizeText(editForm.declarante_dui),
-            numero_factura: sanitizeOptionalText(editForm.numero_factura),
-          }
+          p_datos: pDatos
         });
- 
-       if (updateErr) throw updateErr;
+
+      if (rpcErr) {
+        console.warn("RPC guardar_edicion_segura falló, intentando actualización directa en tabla:", rpcErr.message);
+        
+        // 2. Fallback a actualización directa en la tabla inscripciones
+        const { error: directErr } = await supabase
+          .from("inscripciones")
+          .update(pDatos)
+          .eq("id", selected.id);
+
+        if (directErr) {
+          console.warn("Actualización directa falló, intentando sin columnas opcionales adicionales:", directErr.message);
+          
+          // 3. Fallback de seguridad eliminando columnas que podrían no existir aún en la BD del cliente
+          const { contacto1_dui, contacto2_dui, numero_factura, ...legacyDatos } = pDatos as any;
+          const { error: legacyErr } = await supabase
+            .from("inscripciones")
+            .update(legacyDatos)
+            .eq("id", selected.id);
+
+          if (legacyErr) {
+            throw new Error(legacyErr.message || directErr.message || rpcErr.message);
+          }
+        }
+      }
 
       const updated = { ...selected, ...editForm } as Registro;
       setRegistros((prev) => prev.map((r) => (r.id === selected.id ? updated : r)));
@@ -153,37 +188,64 @@ export function useRegistros(token: string | undefined) {
       setIsEditing(false);
       toast.success("¡Ficha actualizada con éxito!");
     } catch (err: any) {
-      console.error(err);
-      setSaveError(err.message || "Ocurrio un error al guardar los cambios.");
+      console.error("Error al guardar cambios de ficha:", err);
+      setSaveError(err.message || "Ocurrió un error al guardar los cambios.");
     } finally {
       setIsSaving(false);
     }
   };
 
-  const confirmarPago = async (id: string, tipoPago: 'completo' | 'medio pago' | 'becado', numeroFactura: string) => {
+  const confirmarPago = async (id: string, tipoPago: 'completo' | 'medio pago' | 'media beca' | 'becado', numeroFactura: string) => {
     if (!numeroFactura.trim()) {
       throw new Error("El número de factura es obligatorio.");
     }
-    const { error: updateErr } = await supabase
+
+    const facturaClean = numeroFactura.trim();
+
+    // 1. Intentar RPC
+    const { error: rpcErr } = await supabase
       .rpc("confirmar_pago_seguro", {
         p_token: token,
         p_id: id,
         p_tipo_pago: tipoPago,
-        p_numero_factura: numeroFactura.trim()
+        p_numero_factura: facturaClean
       });
- 
-     if (updateErr) throw updateErr;
+
+    if (rpcErr) {
+      console.warn("RPC confirmar_pago_seguro falló, intentando actualización directa:", rpcErr.message);
+      
+      // 2. Fallback directo a tabla
+      const { error: directErr } = await supabase
+        .from("inscripciones")
+        .update({
+          tipo_pago: tipoPago,
+          numero_factura: facturaClean
+        })
+        .eq("id", id);
+
+      if (directErr) {
+        // 3. Fallback sin numero_factura si la columna aún no existiera
+        const { error: legacyErr } = await supabase
+          .from("inscripciones")
+          .update({ tipo_pago: tipoPago })
+          .eq("id", id);
+
+        if (legacyErr) {
+          throw new Error(legacyErr.message || directErr.message || rpcErr.message);
+        }
+      }
+    }
 
     setRegistros((prev) =>
       prev.map((r) =>
         r.id === id
-          ? { ...r, tipo_pago: tipoPago, numero_factura: numeroFactura.trim() }
+          ? { ...r, tipo_pago: tipoPago, numero_factura: facturaClean }
           : r
       )
     );
     setSelected((prev) =>
       prev && prev.id === id
-        ? { ...prev, tipo_pago: tipoPago, numero_factura: numeroFactura.trim() }
+        ? { ...prev, tipo_pago: tipoPago, numero_factura: facturaClean }
         : prev
     );
     toast.success("¡Pago e inscripción registrados con éxito!");

@@ -75,7 +75,7 @@ export default function Home({ onLogout, adminUser }: HomeProps) {
 
           {/* Tarjeta: Ver Inscripciones */}
           <button
-            onClick={() => navigateTo("/admin")}
+            onClick={() => navigateTo("/dashboard")}
             className="group text-left bg-white p-6 rounded-2xl border border-border shadow-sm hover:shadow-md hover:border-secondary/30 transition-all flex flex-col justify-between gap-6 cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0 duration-300"
           >
             <div className="p-4 bg-secondary/10 text-secondary rounded-xl w-14 h-14 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">

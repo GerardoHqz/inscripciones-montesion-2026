@@ -58,7 +58,47 @@ export function useInscripcion() {
       }
     }
 
-    setForm((prev) => ({ ...prev, [k]: finalVal, ...extraUpdates }));
+    setForm((prev) => {
+      const nextForm = { ...prev, [k]: finalVal, ...extraUpdates };
+      const isAdult = parseInt(nextForm.edad, 10) >= 18;
+      if (isAdult) {
+        const fullCamperName = [nextForm.primerNombre, nextForm.segundoNombre, nextForm.primerApellido, nextForm.segundoApellido]
+          .filter(Boolean)
+          .join(" ")
+          .trim();
+        nextForm.declaranteNombre = fullCamperName;
+        nextForm.declaranteDui = nextForm.numeroDocumento || "";
+      } else {
+        // MENOR DE EDAD: El declarante se llena con el Contacto 1 (Padre/Madre/Tutor)
+        const fullContacto1Name = [nextForm.contacto1Nombres, nextForm.contacto1Apellidos]
+          .filter(Boolean)
+          .join(" ")
+          .trim();
+
+        if (fullContacto1Name) {
+          nextForm.declaranteNombre = fullContacto1Name;
+        }
+        if (nextForm.contacto1Dui) {
+          nextForm.declaranteDui = nextForm.contacto1Dui;
+        }
+
+        // El contacto de emergencia se auto-llena por defecto con Contacto 1
+        if (!prev.emergenciaNombres || prev.emergenciaNombres === prev.contacto1Nombres) {
+          nextForm.emergenciaNombres = nextForm.contacto1Nombres;
+        }
+        if (!prev.emergenciaApellidos || prev.emergenciaApellidos === prev.contacto1Apellidos) {
+          nextForm.emergenciaApellidos = nextForm.contacto1Apellidos;
+        }
+        if (!prev.emergenciaTelefono || prev.emergenciaTelefono === prev.contacto1Telefono) {
+          nextForm.emergenciaTelefono = nextForm.contacto1Telefono;
+        }
+        if (!prev.emergenciaRelacion || prev.emergenciaRelacion === prev.contacto1Relacion) {
+          nextForm.emergenciaRelacion = nextForm.contacto1Relacion;
+        }
+      }
+      return nextForm;
+    });
+
     if (errors[k]) setErrors((prev) => { const n = { ...prev }; delete n[k]; return n; });
   };
 

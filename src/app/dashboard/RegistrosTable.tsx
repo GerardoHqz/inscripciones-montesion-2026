@@ -76,11 +76,13 @@ export function RegistrosTable({ registros, loading, error, onSelect, onRetry, t
                       ? "bg-secondary/10 text-secondary border border-secondary/20"
                       : reg.tipo_pago === "medio pago"
                       ? "bg-amber-500/10 text-amber-700 border border-amber-500/20"
+                      : reg.tipo_pago === "media beca"
+                      ? "bg-teal-500/10 text-teal-700 border border-teal-500/20"
                       : reg.tipo_pago === "becado"
                       ? "bg-purple-500/10 text-purple-700 border border-purple-500/20"
                       : "bg-muted text-muted-foreground"
                   }`}>
-                    {reg.tipo_pago === "completo" ? "Pago Completo" : reg.tipo_pago === "medio pago" ? "Medio Pago" : reg.tipo_pago === "becado" ? "Becado" : reg.tipo_pago}
+                    {reg.tipo_pago === "completo" ? "Pago Completo" : reg.tipo_pago === "medio pago" ? "Medio Pago" : reg.tipo_pago === "media beca" ? "Media Beca" : reg.tipo_pago === "becado" ? "Becado" : reg.tipo_pago}
                   </span>
                 </td>
               ) : (

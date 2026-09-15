@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Check, AlertCircle } from "lucide-react";
 import { FormData, TERMINOS } from "../../types";
 import { Field } from "./Field";
@@ -13,6 +14,38 @@ interface Props {
 export function Screen4({ data, onChange, esMayor, errors }: Props) {
   const handle = (e: React.ChangeEvent<HTMLInputElement>) =>
     onChange(e.target.name as keyof FormData, e.target.value);
+
+  useEffect(() => {
+    if (esMayor) {
+      const nombreCompleto = [data.primerNombre, data.segundoNombre, data.primerApellido, data.segundoApellido]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+
+      if (nombreCompleto && data.declaranteNombre !== nombreCompleto) {
+        onChange("declaranteNombre", nombreCompleto);
+      }
+      if (data.numeroDocumento && data.declaranteDui !== data.numeroDocumento) {
+        onChange("declaranteDui", data.numeroDocumento);
+      }
+    } else {
+      const nombreCompletoResponsable = [data.contacto1Nombres, data.contacto1Apellidos]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+
+      if (nombreCompletoResponsable && (!data.declaranteNombre || data.declaranteNombre !== nombreCompletoResponsable)) {
+        onChange("declaranteNombre", nombreCompletoResponsable);
+      }
+      if (data.contacto1Dui && (!data.declaranteDui || data.declaranteDui !== data.contacto1Dui)) {
+        onChange("declaranteDui", data.contacto1Dui);
+      }
+    }
+  }, [
+    esMayor,
+    data.primerNombre, data.segundoNombre, data.primerApellido, data.segundoApellido, data.numeroDocumento,
+    data.contacto1Nombres, data.contacto1Apellidos, data.contacto1Dui
+  ]);
 
   return (
     <div className="space-y-6">
@@ -30,12 +63,21 @@ export function Screen4({ data, onChange, esMayor, errors }: Props) {
       <SectionTitle>Declaracion Jurada</SectionTitle>
 
       <div className="rounded-xl border border-secondary/30 bg-secondary/5 p-4 text-sm text-foreground/80 leading-relaxed">
-        Yo, <span className="font-semibold text-foreground">{data.declaranteNombre || "_______________"}</span> con DUI:{" "}
-        <span className="font-semibold text-foreground">{data.declaranteDui || "_______________"}</span>, por este medio BAJO JURAMENTO, manifiesto, 1) Que autorizo a mi hijo para que asista al Campamento <strong>MONTESION 2026</strong>. 2) Que autorizo para que la <strong>Mision Bautista Internacional</strong> pueda tomar y divulgar fotos de mi hijo. 3) Me responsabilizo sobre el comportamiento de mi hijo. 4) Me comprometo a firmar el permiso migratorio requerido. 5) Que libero de todo tipo de responsabilidad a la <strong>Mision Bautista Internacional</strong>.
+        {esMayor ? (
+          <>
+            Yo, <span className="font-semibold text-foreground">{data.declaranteNombre || "_______________"}</span> con DUI:{" "}
+            <span className="font-semibold text-foreground">{data.declaranteDui || "_______________"}</span>, por este medio BAJO JURAMENTO, manifiesto, 1) Que asistiré al Campamento <strong>MONTESION 2026</strong>. 2) Que autorizo para que la <strong>Mision Bautista Internacional</strong> pueda tomar y divulgar fotos de mi persona. 3) Me responsabilizo sobre mi comportamiento. 4) Me comprometo a firmar el permiso migratorio requerido. 5) Que libero de todo tipo de responsabilidad a la <strong>Mision Bautista Internacional</strong>.
+          </>
+        ) : (
+          <>
+            Yo, <span className="font-semibold text-foreground">{data.declaranteNombre || "_______________"}</span> con DUI:{" "}
+            <span className="font-semibold text-foreground">{data.declaranteDui || "_______________"}</span>, por este medio BAJO JURAMENTO, manifiesto, 1) Que autorizo a mi hijo para que asista al Campamento <strong>MONTESION 2026</strong>. 2) Que autorizo para que la <strong>Mision Bautista Internacional</strong> pueda tomar y divulgar fotos de mi hijo. 3) Me responsabilizo sobre el comportamiento de mi hijo. 4) Me comprometo a firmar el permiso migratorio requerido. 5) Que libero de todo tipo de responsabilidad a la <strong>Mision Bautista Internacional</strong>.
+          </>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label={esMayor ? "Nombre" : "Nombre del padre/madre responsable"} name="declaranteNombre" autoComplete="name" value={data.declaranteNombre} onChange={handle} required error={errors.declaranteNombre} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+        <Field label={esMayor ? "Nombre" : "Nombre del responsable"} name="declaranteNombre" autoComplete="name" value={data.declaranteNombre} onChange={handle} required error={errors.declaranteNombre} />
         <Field label="DUI" name="declaranteDui" value={data.declaranteDui} onChange={handle} required error={errors.declaranteDui} />
       </div>
 

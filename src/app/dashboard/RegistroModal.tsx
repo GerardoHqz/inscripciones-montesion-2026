@@ -17,7 +17,7 @@ interface Props {
   onSaveEdit: () => void;
   onClose: () => void;
   onPrint: () => void;
-  onConfirmarPago?: (id: string, tipoPago: 'completo' | 'medio pago' | 'becado', numeroFactura: string) => Promise<void>;
+  onConfirmarPago?: (id: string, tipoPago: 'completo' | 'medio pago' | 'media beca' | 'becado', numeroFactura: string) => Promise<void>;
   rol: 'admin' | 'colaborador';
 }
 
@@ -39,19 +39,21 @@ export function RegistroModal({
   const [pagoFactura, setPagoFactura] = useState('');
   const [cargandoPago, setCargandoPago] = useState(false);
   const [errorPago, setErrorPago] = useState<string | null>(null);
+  const [modoEditarPago, setModoEditarPago] = useState(false);
 
   const canEditFicha = rol === 'admin' || rol === 'operador';
-  const canEditPago = rol === 'admin' || rol === 'cajero';
+  const canEditPago = rol === 'admin' || rol === 'cajero' || rol === 'libreria';
 
   useEffect(() => {
     setPagoTipo(registro.tipo_pago || 'pendiente');
-    setPagoFactura('');
+    setPagoFactura(registro.numero_factura || '');
     setErrorPago(null);
-  }, [registro.id]);
+    setModoEditarPago(false);
+  }, [registro.id, registro.tipo_pago, registro.numero_factura]);
 
   const handleConfirmar = async () => {
     if (pagoTipo === 'pendiente' || !pagoTipo) {
-      setErrorPago("Seleccione una modalidad de pago válida (Completo, Medio o Becado).");
+      setErrorPago("Seleccione una modalidad de pago válida (Completo, Medio Pago, Media Beca o Becado).");
       return;
     }
     const facturaFinal = pagoFactura.trim() || (pagoTipo === 'becado' ? 'BECADO' : '');
@@ -62,7 +64,8 @@ export function RegistroModal({
     setErrorPago(null);
     setCargandoPago(true);
     try {
-      await onConfirmarPago(registro.id, pagoTipo as 'completo' | 'medio pago' | 'becado', facturaFinal);
+      await onConfirmarPago(registro.id, pagoTipo as 'completo' | 'medio pago' | 'media beca' | 'becado', facturaFinal);
+      setModoEditarPago(false);
     } catch (err: any) {
       setErrorPago(err.message || "Error al procesar el pago.");
     } finally {
@@ -162,6 +165,7 @@ export function RegistroModal({
                         <select value={editForm.tipo_pago || "completo"} onChange={(e) => onInputChange("tipo_pago", e.target.value)} className="w-full px-2.5 py-1.5 border border-border rounded-lg bg-input-background text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40">
                           <option value="completo">Completo</option>
                           <option value="medio pago">Medio Pago</option>
+                          <option value="media beca">Media Beca</option>
                           <option value="becado">Becado</option>
                         </select>
                       </div>
@@ -187,8 +191,8 @@ export function RegistroModal({
                   <div><label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Fecha de Nacimiento</label><p className="text-sm font-semibold text-foreground">{registro.fecha_nacimiento}</p></div>
                   <div><label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Edad</label><p className="text-sm font-semibold text-foreground">{registro.edad} años · {registro.genero}</p></div>
                   <div><label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Talla Camisa</label><p className="text-sm font-semibold text-foreground">{registro.talla_camisa || "Sin registrar"}</p></div>
-                  {registro.tipo_pago !== null ? (
-                    <div className="col-span-1 sm:col-span-2 md:col-span-3 pt-3 border-t border-border/60 flex items-center justify-between">
+                  {registro.tipo_pago !== null && !modoEditarPago ? (
+                    <div className="col-span-1 sm:col-span-2 md:col-span-3 pt-3 border-t border-border/60 flex items-center justify-between flex-wrap gap-2">
                       <span className="text-xs font-semibold text-muted-foreground">Pago Registrado:</span>
                       <div className="flex items-center gap-2">
                         <span className={`text-xs font-bold uppercase px-2.5 py-0.5 rounded-full ${
@@ -196,16 +200,31 @@ export function RegistroModal({
                             ? "bg-secondary/15 text-secondary"
                             : registro.tipo_pago === "medio pago"
                             ? "bg-amber-500/15 text-amber-700"
+                            : registro.tipo_pago === "media beca"
+                            ? "bg-teal-500/15 text-teal-700"
                             : registro.tipo_pago === "becado"
                             ? "bg-purple-500/15 text-purple-700"
                             : "bg-muted text-muted-foreground"
                         }`}>
-                          {registro.tipo_pago === "becado" ? "Becado" : registro.tipo_pago === "medio pago" ? "Medio Pago" : `Pago ${registro.tipo_pago}`}
+                          {registro.tipo_pago === "becado" ? "Becado" : registro.tipo_pago === "media beca" ? "Media Beca" : registro.tipo_pago === "medio pago" ? "Medio Pago" : `Pago ${registro.tipo_pago}`}
                         </span>
                         {registro.numero_factura && (
                           <span className="text-xs font-mono text-muted-foreground">
                             (Factura: <span className="font-bold text-foreground">{registro.numero_factura}</span>)
                           </span>
+                        )}
+                        {canEditPago && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPagoTipo(registro.tipo_pago || 'completo');
+                              setPagoFactura(registro.numero_factura || '');
+                              setModoEditarPago(true);
+                            }}
+                            className="ml-2 px-2.5 py-1 text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 border border-amber-500/30 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                          >
+                            <Pen className="w-3 h-3" /> Modificar Pago
+                          </button>
                         )}
                       </div>
                     </div>
@@ -214,7 +233,7 @@ export function RegistroModal({
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-amber-800 uppercase tracking-wide flex items-center gap-1.5">
                           <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
-                          Registrar Pago en Librería (Taber Store)
+                          {registro.tipo_pago !== null ? "Modificar Registro de Pago" : "Registrar Pago en Librería (Taber Store)"}
                         </span>
                         {errorPago && <span className="text-xs text-red-600 font-semibold">{errorPago}</span>}
                       </div>
@@ -229,6 +248,7 @@ export function RegistroModal({
                             <option value="pendiente">Pago Pendiente</option>
                             <option value="completo">Pago Completo</option>
                             <option value="medio pago">Medio Pago</option>
+                            <option value="media beca">Media Beca</option>
                             <option value="becado">Becado</option>
                           </select>
                         </div>
@@ -242,14 +262,26 @@ export function RegistroModal({
                             className="w-full px-2.5 py-1.5 border border-border rounded-lg bg-white text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 placeholder:text-muted-foreground/30"
                           />
                         </div>
-                        <button
-                          type="button"
-                          onClick={handleConfirmar}
-                          disabled={cargandoPago}
-                          className="px-4 py-1.5 bg-primary hover:bg-primary-hover active:bg-primary/95 text-white text-xs font-bold rounded-lg shadow-sm cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto h-[32px] flex items-center justify-center gap-1.5"
-                        >
-                          {cargandoPago ? "Procesando..." : "Confirmar e Inscribir"}
-                        </button>
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                          <button
+                            type="button"
+                            onClick={handleConfirmar}
+                            disabled={cargandoPago}
+                            className="px-4 py-1.5 bg-primary hover:bg-primary-hover active:bg-primary/95 text-white text-xs font-bold rounded-lg shadow-sm cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed h-[32px] flex items-center justify-center gap-1.5 flex-1 sm:flex-none"
+                          >
+                            {cargandoPago ? "Guardando..." : registro.tipo_pago !== null ? "Guardar Pago" : "Confirmar e Inscribir"}
+                          </button>
+                          {registro.tipo_pago !== null && (
+                            <button
+                              type="button"
+                              onClick={() => setModoEditarPago(false)}
+                              disabled={cargandoPago}
+                              className="px-3 py-1.5 bg-muted hover:bg-muted/80 text-foreground text-xs font-bold rounded-lg transition-colors h-[32px]"
+                            >
+                              Cancelar
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ) : (

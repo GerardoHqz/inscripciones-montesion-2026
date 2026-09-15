@@ -294,7 +294,7 @@ export function RegistroPdfDocument({ registro: rawRegistro, isPublicForm = fals
               <Text style={styles.badgeText}>
                 {isPublicForm || !r.tipo_pago 
                   ? "PENDIENTE DE PAGO" 
-                  : `${r.tipo_pago === 'becado' ? 'BECADO' : r.tipo_pago === 'medio pago' ? 'PAGO MEDIO' : `PAGO ${r.tipo_pago?.toUpperCase()}`}${r.numero_factura ? ` (Factura: ${r.numero_factura})` : ""}`}
+                  : `${r.tipo_pago === 'becado' ? 'BECADO' : r.tipo_pago === 'media beca' ? 'MEDIA BECA' : r.tipo_pago === 'medio pago' ? 'PAGO MEDIO' : `PAGO ${r.tipo_pago?.toUpperCase()}`}${r.numero_factura ? ` (Factura: ${r.numero_factura})` : ""}`}
               </Text>
             </View>
           </View>

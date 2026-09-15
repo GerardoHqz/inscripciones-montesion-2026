@@ -2,7 +2,7 @@ import { User, Users, AlertCircle, FileText, PenLine } from "lucide-react";
 
 // ─── Roles ─────────────────────────────────────────────────────────────
 
-export type RolUsuario = 'admin' | 'operador' | 'libreria' | 'colaborador';
+export type RolUsuario = 'admin' | 'operador' | 'libreria' | 'colaborador' | 'cajero';
 
 // ─── Registro (Dashboard) ─────────────────────────────────────────────────────
 
@@ -22,7 +22,7 @@ export interface Registro {
   numero_documento: string;
   fecha_vencimiento_documento: string | null;
   celular: string;
-  tipo_pago: 'completo' | 'medio pago' | 'becado' | null;
+  tipo_pago: 'completo' | 'medio pago' | 'media beca' | 'becado' | null;
   contacto1_nombres: string;
   contacto1_apellidos: string;
   contacto1_relacion: string;
@@ -65,7 +65,7 @@ export interface FormData {
   numeroDocumento: string;
   fechaVencimientoDocumento: string;
   celular: string;
-  tipoPago: "completo" | "medio pago" | "becado" | "";
+  tipoPago: "completo" | "medio pago" | "media beca" | "becado" | "";
   contacto1Nombres: string;
   contacto1Apellidos: string;
   contacto1Relacion: string;

@@ -31,6 +31,16 @@ export function InscripcionForm() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [step, showNotice, submitted]);
 
+  const handleRegresar = () => {
+    const savedSession = localStorage.getItem("ms_admin_session");
+    if (savedSession) {
+      window.history.pushState({}, "", "/home");
+    } else {
+      window.history.pushState({}, "", "/login");
+    }
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  };
+
   return (
     <div className="min-h-screen bg-background font-['Inter',sans-serif] print:bg-white">
       <header className="w-full no-print overflow-hidden" style={{ height: '120px' }}>
@@ -42,7 +52,16 @@ export function InscripcionForm() {
         />
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-6 print:p-0 print:m-0 print:max-w-full print:bg-transparent">
+      <main className="max-w-2xl mx-auto px-4 py-4 print:p-0 print:m-0 print:max-w-full print:bg-transparent">
+        <div className="flex justify-between items-center mb-4 no-print">
+          <button
+            type="button"
+            onClick={handleRegresar}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold bg-muted hover:bg-muted/80 text-foreground rounded-lg transition-all cursor-pointer border border-border shadow-xs"
+          >
+            <ChevronLeft className="w-4 h-4" /> Regresar
+          </button>
+        </div>
         {submitted ? (
           <div className="bg-card rounded-2xl shadow-sm border border-border p-6 sm:p-8 print:p-0 print:border-none print:shadow-none print:bg-transparent">
             <SuccessScreen data={form} sig={sig} />

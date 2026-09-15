@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { FormData } from "../../types";
 import { Field } from "./Field";
 import { SectionTitle } from "./SectionTitle";
@@ -15,6 +16,21 @@ interface Props {
 export function Screen3({ data, onChange, errors }: Props) {
   const handle = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     onChange(e.target.name as keyof FormData, e.target.value);
+
+  useEffect(() => {
+    if (!data.emergenciaNombres && data.contacto1Nombres) {
+      onChange("emergenciaNombres", data.contacto1Nombres);
+    }
+    if (!data.emergenciaApellidos && data.contacto1Apellidos) {
+      onChange("emergenciaApellidos", data.contacto1Apellidos);
+    }
+    if (!data.emergenciaTelefono && data.contacto1Telefono) {
+      onChange("emergenciaTelefono", data.contacto1Telefono);
+    }
+    if (!data.emergenciaRelacion && data.contacto1Relacion) {
+      onChange("emergenciaRelacion", data.contacto1Relacion);
+    }
+  }, [data.contacto1Nombres, data.contacto1Apellidos, data.contacto1Telefono, data.contacto1Relacion]);
 
   return (
     <div className="space-y-6">

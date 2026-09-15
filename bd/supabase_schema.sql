@@ -49,7 +49,7 @@ create table public.inscripciones (
     celular varchar(30) not null,
 
     tipo_pago varchar(30)
-        check (tipo_pago in ('completo','medio pago','becado')),
+        check (tipo_pago in ('completo','medio pago','media beca','becado')),
 
     -- ============================
     -- Contacto principal

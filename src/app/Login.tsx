@@ -52,7 +52,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
   };
 
   const handleBackToInscripcion = () => {
-    window.history.pushState({}, "", "/");
+    window.history.pushState({}, "", "/form");
     window.dispatchEvent(new PopStateEvent("popstate"));
   };
 

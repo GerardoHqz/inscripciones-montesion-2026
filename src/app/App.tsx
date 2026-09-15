@@ -30,29 +30,42 @@ export default function App() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
+  // Redirigir /admin a /dashboard
+  useEffect(() => {
+    if (path === "/admin") {
+      window.history.replaceState({}, "", "/dashboard");
+      setPath("/dashboard");
+    }
+  }, [path]);
+
   const handleLoginSuccess = (user: AdminUser) => {
     localStorage.setItem("ms_admin_session", JSON.stringify(user));
     setAdminUser(user);
+    window.history.pushState({}, "", "/home");
+    setPath("/home");
   };
 
   const handleLogout = () => {
     localStorage.removeItem("ms_admin_session");
     setAdminUser(null);
-    window.history.pushState({}, "", "/admin");
-    window.dispatchEvent(new PopStateEvent("popstate"));
+    window.history.pushState({}, "", "/login");
+    setPath("/login");
   };
+
+  // Rutas públicas explícitas para el formulario
+  const isFormPath = path === "/form" || path === "/inscripcion" || path === "/nueva-inscripcion";
 
   return (
     <>
       <Toaster position="top-right" richColors closeButton />
-      {path === "/" || path === "" || path === "/inscripcion" || path === "/nueva-inscripcion" ? (
+      {isFormPath ? (
         <InscripcionForm />
-      ) : path === "/admin" || path === "/dashboard" || path === "/login" ? (
-        !adminUser ? <Login onLoginSuccess={handleLoginSuccess} /> : <DashboardPage onLogout={handleLogout} adminUser={adminUser} />
-      ) : path === "/home" && adminUser ? (
+      ) : path === "/dashboard" && adminUser ? (
+        <DashboardPage onLogout={handleLogout} adminUser={adminUser} />
+      ) : adminUser ? (
         <Home onLogout={handleLogout} adminUser={adminUser} />
       ) : (
-        <InscripcionForm />
+        <Login onLoginSuccess={handleLoginSuccess} />
       )}
     </>
   );

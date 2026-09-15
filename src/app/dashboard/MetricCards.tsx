@@ -12,6 +12,7 @@ export function MetricCards({ registros }: Props) {
   const activas = registrosActivos.length;
   const completos = registrosActivos.filter((r) => r.tipo_pago === "completo").length;
   const medios = registrosActivos.filter((r) => r.tipo_pago === "medio pago").length;
+  const mediasBecas = registrosActivos.filter((r) => r.tipo_pago === "media beca").length;
   const becados = registrosActivos.filter((r) => r.tipo_pago === "becado").length;
   const menores = registrosActivos.filter((r) => r.edad < 18).length;
   const mayores = registrosActivos.filter((r) => r.edad >= 18).length;
@@ -19,7 +20,7 @@ export function MetricCards({ registros }: Props) {
   const femenino = registrosActivos.filter((r) => r.genero === "Femenino").length;
 
   return (
-    <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
       {/* Linea 1 */}
       <div className="bg-white p-4 rounded-xl border border-[#e5e7eb] shadow-sm flex items-center gap-3">
         <div className="p-3 bg-amber-500/10 rounded-lg text-amber-600"><Clock className="w-5 h-5" /></div>
@@ -50,6 +51,14 @@ export function MetricCards({ registros }: Props) {
         <div>
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Medio Pago</p>
           <h3 className="text-2xl font-black text-emerald-600">{medios}</h3>
+        </div>
+      </div>
+
+      <div className="bg-white p-4 rounded-xl border border-[#e5e7eb] shadow-sm flex items-center gap-3">
+        <div className="p-3 bg-teal-500/10 rounded-lg text-teal-600"><CreditCard className="w-5 h-5" /></div>
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Media Beca</p>
+          <h3 className="text-2xl font-black text-teal-600">{mediasBecas}</h3>
         </div>
       </div>
 
