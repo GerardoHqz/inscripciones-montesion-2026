@@ -56,7 +56,9 @@ export function RegistrosTable({ registros, loading, error, onSelect, onRetry, t
             <tr key={reg.id} onClick={() => onSelect(reg)} className="hover:bg-muted/30 active:bg-muted/50 cursor-pointer transition-colors">
               <td className="py-3.5 px-4 font-bold text-foreground">
                 {reg.primer_nombre} {reg.segundo_nombre || ""} {reg.primer_apellido} {reg.segundo_apellido || ""}
-                <span className="block font-normal text-[10px] text-muted-foreground capitalize">{reg.genero}</span>
+                <span className="block font-normal text-[10px] text-muted-foreground capitalize">
+                  {reg.genero}
+                </span>
               </td>
               <td className="py-3.5 px-4">
                 {reg.edad} años

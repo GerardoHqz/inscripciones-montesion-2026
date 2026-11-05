@@ -11,7 +11,7 @@ interface Props {
   errors: Partial<Record<keyof FormData, string>>;
 }
 
-export function Screen2({ data, onChange, esMayor, errors }: Props) {
+export function PasoContactoPadres({ data, onChange, esMayor, errors }: Props) {
   const handle = (e: React.ChangeEvent<HTMLInputElement>) =>
     onChange(e.target.name as keyof FormData, e.target.value);
 
@@ -42,6 +42,7 @@ export function Screen2({ data, onChange, esMayor, errors }: Props) {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Documento de Identidad (DUI)" name="contacto1Dui" value={data.contacto1Dui} onChange={handle} placeholder="Ej. 00000000-0" required error={errors.contacto1Dui} />
+          <Field label="Fecha de Vencimiento del DUI" name="contacto1DuiVencimiento" type="date" value={data.contacto1DuiVencimiento} onChange={handle} required error={errors.contacto1DuiVencimiento} />
         </div>
       </div>
 
@@ -66,6 +67,7 @@ export function Screen2({ data, onChange, esMayor, errors }: Props) {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Documento de Identidad" name="contacto2Dui" value={data.contacto2Dui} onChange={handle} error={errors.contacto2Dui} />
+            <Field label="Fecha de Vencimiento del DUI" name="contacto2DuiVencimiento" type="date" value={data.contacto2DuiVencimiento} onChange={handle} error={errors.contacto2DuiVencimiento} />
           </div>
         </div>
       )}

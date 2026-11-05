@@ -1,5 +1,6 @@
-import { Users, CreditCard, Clock, GraduationCap, UserCheck, ShieldCheck, AlertCircle } from "lucide-react";
+import { Users, CreditCard, Clock, GraduationCap, UserCheck, ShieldCheck, Briefcase } from "lucide-react";
 import { Registro, RolUsuario } from "../../types";
+import { useConfiguracionEvento } from "../../hooks/useConfiguracionEvento";
 
 interface Props {
   registros: Registro[];
@@ -7,17 +8,20 @@ interface Props {
 }
 
 export function MetricCards({ registros }: Props) {
+  const { config } = useConfiguracionEvento();
   const solicitudes = registros.filter((r) => r.tipo_pago === null).length;
-  const registrosActivos = registros.filter((r) => r.tipo_pago !== null);
+  // Excluir a los empleados de las inscripciones activas
+  const registrosActivos = registros.filter((r) => r.tipo_pago !== null && !r.es_empleado);
   const activas = registrosActivos.length;
   const completos = registrosActivos.filter((r) => r.tipo_pago === "completo").length;
   const medios = registrosActivos.filter((r) => r.tipo_pago === "medio pago").length;
   const mediasBecas = registrosActivos.filter((r) => r.tipo_pago === "media beca").length;
   const becados = registrosActivos.filter((r) => r.tipo_pago === "becado").length;
-  const menores = registrosActivos.filter((r) => r.edad < 18).length;
-  const mayores = registrosActivos.filter((r) => r.edad >= 18).length;
+  const menores = registrosActivos.filter((r) => r.edad < config.edadMayoriaEdad).length;
+  const mayores = registrosActivos.filter((r) => r.edad >= config.edadMayoriaEdad).length;
   const masculino = registrosActivos.filter((r) => r.genero === "Masculino").length;
   const femenino = registrosActivos.filter((r) => r.genero === "Femenino").length;
+  const equipoTrabajo = registros.filter((r) => r.es_empleado === true || r.es_empleado === "true" as any).length;
 
   return (
     <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
@@ -96,6 +100,14 @@ export function MetricCards({ registros }: Props) {
             <span className="text-muted-foreground/30">|</span>
             <span className="text-xs font-medium text-muted-foreground">F: <strong className="text-xl font-black text-rose-600">{femenino}</strong></span>
           </div>
+        </div>
+      </div>
+
+      <div className="bg-white p-4 rounded-xl border border-[#e5e7eb] shadow-sm flex items-center gap-3">
+        <div className="p-3 bg-blue-500/10 rounded-lg text-blue-600"><Briefcase className="w-5 h-5" /></div>
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Equipo de Trabajo</p>
+          <h3 className="text-2xl font-black text-blue-600">{equipoTrabajo}</h3>
         </div>
       </div>
     </section>

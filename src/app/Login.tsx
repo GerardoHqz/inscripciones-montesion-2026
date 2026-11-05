@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { supabase } from "../utils/supabase";
-import { Lock, User, Eye, EyeOff, Tent, AlertCircle, RefreshCw } from "lucide-react";
+import { Lock, User, Eye, EyeOff, AlertCircle, RefreshCw } from "lucide-react";
 import logoImg from "../imports/MONTE WEB-12-1.png";
 
 import { AdminUser } from "./App";

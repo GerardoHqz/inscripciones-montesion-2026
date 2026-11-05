@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { X, Pen, Save, Printer, FileCheck, AlertCircle } from "lucide-react";
-import { Registro } from "../../types";
+import { Registro, RolUsuario } from "../../types";
+import { TALLAS_CAMISA, TIPOS_PAGO_OPCIONES, TipoPago } from "../../utils/constants";
 
 const inputClass = "w-full px-2.5 py-1.5 border border-border rounded-lg bg-input-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all";
 const labelClass = "text-[9px] uppercase font-bold text-muted-foreground tracking-wider block mb-1";
@@ -17,8 +18,18 @@ interface Props {
   onSaveEdit: () => void;
   onClose: () => void;
   onPrint: () => void;
-  onConfirmarPago?: (id: string, tipoPago: 'completo' | 'medio pago' | 'media beca' | 'becado', numeroFactura: string) => Promise<void>;
-  rol: 'admin' | 'colaborador';
+  onConfirmarPago?: (
+    id: string, 
+    tipoPago: 'completo' | 'medio pago' | 'media beca' | 'becado', 
+    numeroFactura: string, 
+    opciones?: {
+      es_empleado?: boolean;
+      es_lider?: boolean;
+      es_boanerges?: boolean;
+      es_exclusion?: boolean;
+    } | boolean
+  ) => Promise<void>;
+  rol: RolUsuario;
 }
 
 function SectionHeader({ title }: { title: string }) {
@@ -37,19 +48,36 @@ export function RegistroModal({
 }: Props) {
   const [pagoTipo, setPagoTipo] = useState<string>('pendiente');
   const [pagoFactura, setPagoFactura] = useState('');
+  const [esEmpleado, setEsEmpleado] = useState(false);
+  const [esLider, setEsLider] = useState(false);
+  const [esBoanerges, setEsBoanerges] = useState(false);
+  const [esExclusion, setEsExclusion] = useState(false);
   const [cargandoPago, setCargandoPago] = useState(false);
   const [errorPago, setErrorPago] = useState<string | null>(null);
   const [modoEditarPago, setModoEditarPago] = useState(false);
 
   const canEditFicha = rol === 'admin' || rol === 'operador';
-  const canEditPago = rol === 'admin' || rol === 'cajero' || rol === 'libreria';
+  const canEditPago = rol === 'admin' || rol === 'cajero';
 
   useEffect(() => {
     setPagoTipo(registro.tipo_pago || 'pendiente');
     setPagoFactura(registro.numero_factura || '');
+    setEsEmpleado(Boolean(registro.es_empleado));
+    setEsLider(Boolean(registro.es_lider));
+    setEsBoanerges(Boolean(registro.es_boanerges ?? (registro as any).es_boanergues));
+    setEsExclusion(Boolean(registro.es_exclusion));
     setErrorPago(null);
     setModoEditarPago(false);
-  }, [registro.id, registro.tipo_pago, registro.numero_factura]);
+  }, [
+    registro.id, 
+    registro.tipo_pago, 
+    registro.numero_factura, 
+    registro.es_empleado, 
+    registro.es_lider, 
+    registro.es_boanerges,
+    (registro as any).es_boanergues,
+    registro.es_exclusion
+  ]);
 
   const handleConfirmar = async () => {
     if (pagoTipo === 'pendiente' || !pagoTipo) {
@@ -64,7 +92,19 @@ export function RegistroModal({
     setErrorPago(null);
     setCargandoPago(true);
     try {
-      await onConfirmarPago(registro.id, pagoTipo as 'completo' | 'medio pago' | 'media beca' | 'becado', facturaFinal);
+      if (onConfirmarPago) {
+        await onConfirmarPago(
+          registro.id,
+          pagoTipo as 'completo' | 'medio pago' | 'media beca' | 'becado',
+          facturaFinal,
+          {
+            es_empleado: esEmpleado,
+            es_lider: esLider,
+            es_boanerges: esBoanerges,
+            es_exclusion: esExclusion
+          }
+        );
+      }
       setModoEditarPago(false);
     } catch (err: any) {
       setErrorPago(err.message || "Error al procesar el pago.");
@@ -155,7 +195,10 @@ export function RegistroModal({
                   </div>
                   <div><label className={labelClass}>Talla Camisa</label>
                     <select value={editForm.talla_camisa || ""} onChange={(e) => onInputChange("talla_camisa", e.target.value)} className={inputClass}>
-                      <option value="">Sin registrar</option><option value="S">S</option><option value="M">M</option><option value="L">L</option><option value="XL">XL</option><option value="XXL">XXL</option>
+                      <option value="">Sin registrar</option>
+                      {TALLAS_CAMISA.map((t) => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
                     </select>
                   </div>
                   {canEditPago && (
@@ -163,10 +206,11 @@ export function RegistroModal({
                       <div>
                         <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block mb-1">Modalidad de Pago</label>
                         <select value={editForm.tipo_pago || "completo"} onChange={(e) => onInputChange("tipo_pago", e.target.value)} className="w-full px-2.5 py-1.5 border border-border rounded-lg bg-input-background text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40">
-                          <option value="completo">Completo</option>
-                          <option value="medio pago">Medio Pago</option>
-                          <option value="media beca">Media Beca</option>
-                          <option value="becado">Becado</option>
+                          {TIPOS_PAGO_OPCIONES.map((opc) => (
+                            <option key={opc.valor} value={opc.valor}>
+                              {opc.etiqueta}
+                            </option>
+                          ))}
                         </select>
                       </div>
                       <div>
@@ -178,6 +222,54 @@ export function RegistroModal({
                           placeholder="Ej. FAC-00123"
                           className="w-full px-2.5 py-1.5 border border-border rounded-lg bg-input-background text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
                         />
+                      </div>
+                      <div className="col-span-1 sm:col-span-2 md:col-span-3 pt-2 border-t border-border/40 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(editForm.es_empleado)}
+                            onChange={(e) => onInputChange("es_empleado", e.target.checked)}
+                            className="w-4 h-4 rounded border-border text-primary focus:ring-primary/40 cursor-pointer accent-primary"
+                          />
+                          <span className="text-xs font-bold text-foreground">
+                            Es equipo de trabajo
+                          </span>
+                        </label>
+                        <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(editForm.es_lider)}
+                            onChange={(e) => onInputChange("es_lider", e.target.checked)}
+                            className="w-4 h-4 rounded border-border text-primary focus:ring-primary/40 cursor-pointer accent-primary"
+                          />
+                          <span className="text-xs font-bold text-foreground">
+                            Líder
+                          </span>
+                        </label>
+                        <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(editForm.es_boanerges)}
+                            onChange={(e) => {
+                              onInputChange("es_boanerges", e.target.checked);
+                            }}
+                            className="w-4 h-4 rounded border-border text-primary focus:ring-primary/40 cursor-pointer accent-primary"
+                          />
+                          <span className="text-xs font-bold text-foreground">
+                            Boanerges
+                          </span>
+                        </label>
+                        <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(editForm.es_exclusion)}
+                            onChange={(e) => onInputChange("es_exclusion", e.target.checked)}
+                            className="w-4 h-4 rounded border-border text-primary focus:ring-primary/40 cursor-pointer accent-primary"
+                          />
+                          <span className="text-xs font-bold text-foreground">
+                            Exclusión cabaña
+                          </span>
+                        </label>
                       </div>
                     </div>
                   )}
@@ -194,7 +286,7 @@ export function RegistroModal({
                   {registro.tipo_pago !== null && !modoEditarPago ? (
                     <div className="col-span-1 sm:col-span-2 md:col-span-3 pt-3 border-t border-border/60 flex items-center justify-between flex-wrap gap-2">
                       <span className="text-xs font-semibold text-muted-foreground">Pago Registrado:</span>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className={`text-xs font-bold uppercase px-2.5 py-0.5 rounded-full ${
                           registro.tipo_pago === "completo"
                             ? "bg-secondary/15 text-secondary"
@@ -213,12 +305,36 @@ export function RegistroModal({
                             (Factura: <span className="font-bold text-foreground">{registro.numero_factura}</span>)
                           </span>
                         )}
+                        {registro.es_empleado && (
+                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-800 border border-amber-500/30">
+                            Equipo
+                          </span>
+                        )}
+                        {registro.es_lider && (
+                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-700 border border-blue-500/30">
+                            Líder
+                          </span>
+                        )}
+                        {Boolean(registro.es_boanerges ?? (registro as any).es_boanergues) && (
+                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-orange-500/15 text-orange-700 border border-orange-500/30">
+                            Boanerges
+                          </span>
+                        )}
+                        {registro.es_exclusion && (
+                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-700 border border-rose-500/30">
+                            Exclusión
+                          </span>
+                        )}
                         {canEditPago && (
                           <button
                             type="button"
                             onClick={() => {
                               setPagoTipo(registro.tipo_pago || 'completo');
                               setPagoFactura(registro.numero_factura || '');
+                              setEsEmpleado(Boolean(registro.es_empleado));
+                              setEsLider(Boolean(registro.es_lider));
+                              setEsBoanerges(Boolean(registro.es_boanerges ?? (registro as any).es_boanergues));
+                              setEsExclusion(Boolean(registro.es_exclusion));
                               setModoEditarPago(true);
                             }}
                             className="ml-2 px-2.5 py-1 text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 border border-amber-500/30 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
@@ -246,10 +362,11 @@ export function RegistroModal({
                             className="w-full px-2.5 py-1.5 border border-border rounded-lg bg-white text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
                           >
                             <option value="pendiente">Pago Pendiente</option>
-                            <option value="completo">Pago Completo</option>
-                            <option value="medio pago">Medio Pago</option>
-                            <option value="media beca">Media Beca</option>
-                            <option value="becado">Becado</option>
+                            {TIPOS_PAGO_OPCIONES.map((opc) => (
+                              <option key={opc.valor} value={opc.valor}>
+                                {opc.etiqueta}
+                              </option>
+                            ))}
                           </select>
                         </div>
                         <div className="flex-1 w-full space-y-1">
@@ -282,6 +399,52 @@ export function RegistroModal({
                             </button>
                           )}
                         </div>
+                      </div>
+                      <div className="pt-2 border-t border-amber-500/20 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={esEmpleado}
+                            onChange={(e) => setEsEmpleado(e.target.checked)}
+                            className="w-4 h-4 rounded border-amber-500/40 text-primary focus:ring-primary/40 cursor-pointer accent-primary"
+                          />
+                          <span className="text-xs font-bold text-amber-950">
+                            Es equipo de trabajo
+                          </span>
+                        </label>
+                        <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={esLider}
+                            onChange={(e) => setEsLider(e.target.checked)}
+                            className="w-4 h-4 rounded border-amber-500/40 text-primary focus:ring-primary/40 cursor-pointer accent-primary"
+                          />
+                          <span className="text-xs font-bold text-amber-950">
+                            Líder
+                          </span>
+                        </label>
+                        <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={esBoanerges}
+                            onChange={(e) => setEsBoanerges(e.target.checked)}
+                            className="w-4 h-4 rounded border-amber-500/40 text-primary focus:ring-primary/40 cursor-pointer accent-primary"
+                          />
+                          <span className="text-xs font-bold text-amber-950">
+                            Boanerges
+                          </span>
+                        </label>
+                        <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={esExclusion}
+                            onChange={(e) => setEsExclusion(e.target.checked)}
+                            className="w-4 h-4 rounded border-amber-500/40 text-primary focus:ring-primary/40 cursor-pointer accent-primary"
+                          />
+                          <span className="text-xs font-bold text-amber-950">
+                            Exclusión cabaña
+                          </span>
+                        </label>
                       </div>
                     </div>
                   ) : (
@@ -317,7 +480,10 @@ export function RegistroModal({
                       <div><label className={labelClass}>Relacion</label><input type="text" value={editForm.contacto1_relacion || ""} onChange={(e) => onInputChange("contacto1_relacion", e.target.value)} className={inputClass} /></div>
                       <div><label className={labelClass}>Telefono</label><input type="tel" value={editForm.contacto1_telefono || ""} onChange={(e) => onInputChange("contacto1_telefono", e.target.value)} className={inputClass} /></div>
                     </div>
-                    <div><label className={labelClass}>Documento de Identidad</label><input type="text" value={editForm.contacto1_dui || ""} onChange={(e) => onInputChange("contacto1_dui", e.target.value)} className={inputClass} /></div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div><label className={labelClass}>Documento de Identidad</label><input type="text" value={editForm.contacto1_dui || ""} onChange={(e) => onInputChange("contacto1_dui", e.target.value)} className={inputClass} /></div>
+                      <div><label className={labelClass}>Vencimiento DUI</label><input type="date" value={editForm.contacto1_dui_vencimiento || ""} onChange={(e) => onInputChange("contacto1_dui_vencimiento", e.target.value)} className={inputClass} /></div>
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-1.5">
@@ -327,6 +493,7 @@ export function RegistroModal({
                       <span className="text-[9px] uppercase font-bold text-muted-foreground block">Documento de Identidad (DUI/Pasaporte)</span>
                       <span className={`text-sm font-semibold ${registro.contacto1_dui ? 'text-foreground' : 'text-muted-foreground italic'}`}>
                         {registro.contacto1_dui || 'Sin registrar'}
+                        {registro.contacto1_dui_vencimiento && ` (Vence: ${registro.contacto1_dui_vencimiento})`}
                       </span>
                     </div>
                   </div>
@@ -346,7 +513,10 @@ export function RegistroModal({
                       <div><label className={labelClass}>Relacion</label><input type="text" value={editForm.contacto2_relacion || ""} onChange={(e) => onInputChange("contacto2_relacion", e.target.value)} className={inputClass} /></div>
                       <div><label className={labelClass}>Telefono</label><input type="tel" value={editForm.contacto2_telefono || ""} onChange={(e) => onInputChange("contacto2_telefono", e.target.value)} className={inputClass} /></div>
                     </div>
-                    <div><label className={labelClass}>Documento de Identidad</label><input type="text" value={editForm.contacto2_dui || ""} onChange={(e) => onInputChange("contacto2_dui", e.target.value)} className={inputClass} /></div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div><label className={labelClass}>Documento de Identidad</label><input type="text" value={editForm.contacto2_dui || ""} onChange={(e) => onInputChange("contacto2_dui", e.target.value)} className={inputClass} /></div>
+                      <div><label className={labelClass}>Vencimiento DUI</label><input type="date" value={editForm.contacto2_dui_vencimiento || ""} onChange={(e) => onInputChange("contacto2_dui_vencimiento", e.target.value)} className={inputClass} /></div>
+                    </div>
                   </div>
                 ) : registro.contacto2_nombres ? (
                   <div className="space-y-1.5">
@@ -356,6 +526,7 @@ export function RegistroModal({
                       <span className="text-[9px] uppercase font-bold text-muted-foreground block">Documento de Identidad (DUI/Pasaporte)</span>
                       <span className={`text-sm font-semibold ${registro.contacto2_dui ? 'text-foreground' : 'text-muted-foreground italic'}`}>
                         {registro.contacto2_dui || 'Sin registrar'}
+                        {registro.contacto2_dui_vencimiento && ` (Vence: ${registro.contacto2_dui_vencimiento})`}
                       </span>
                     </div>
                   </div>

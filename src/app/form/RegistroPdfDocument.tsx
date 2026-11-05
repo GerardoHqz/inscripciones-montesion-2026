@@ -1,6 +1,10 @@
 import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer";
 import { Registro } from "../../types";
 import { sanitizeText } from "../../utils/sanitize";
+import {
+  REQUISITOS_DOCUMENTACION_MENORES,
+  REQUISITOS_DOCUMENTACION_MAYORES,
+} from "../../utils/constants";
 import logoImg from "../../imports/MONTE WEB-13.png";
 
 const styles = StyleSheet.create({
@@ -315,7 +319,14 @@ export function RegistroPdfDocument({ registro: rawRegistro, isPublicForm = fals
             </View>
             <View>
               <Text style={styles.label}>DOCUMENTO (DUI/PASAPORTE)</Text>
-              {r.contacto1_dui ? <Text style={styles.value}>{r.contacto1_dui}</Text> : <Text style={styles.valueItalic}>Sin registrar</Text>}
+              {r.contacto1_dui ? (
+                <Text style={styles.value}>
+                  {r.contacto1_dui}
+                  {r.contacto1_dui_vencimiento ? ` (Vence: ${r.contacto1_dui_vencimiento})` : ""}
+                </Text>
+              ) : (
+                <Text style={styles.valueItalic}>Sin registrar</Text>
+              )}
             </View>
           </View>
 
@@ -333,7 +344,14 @@ export function RegistroPdfDocument({ registro: rawRegistro, isPublicForm = fals
                 </View>
                 <View>
                   <Text style={styles.label}>DOCUMENTO (DUI/PASAPORTE)</Text>
-                  {r.contacto2_dui ? <Text style={styles.value}>{r.contacto2_dui}</Text> : <Text style={styles.valueItalic}>Sin registrar</Text>}
+                  {r.contacto2_dui ? (
+                    <Text style={styles.value}>
+                      {r.contacto2_dui}
+                      {r.contacto2_dui_vencimiento ? ` (Vence: ${r.contacto2_dui_vencimiento})` : ""}
+                    </Text>
+                  ) : (
+                    <Text style={styles.valueItalic}>Sin registrar</Text>
+                  )}
                 </View>
               </>
             ) : (
@@ -427,36 +445,24 @@ export function RegistroPdfDocument({ registro: rawRegistro, isPublicForm = fals
               <View style={styles.checklistTitleBox}>
                 <Text style={styles.checklistTitleText}>REQUISITOS PARA MENORES DE EDAD</Text>
               </View>
-              <View style={styles.checklistItem}>
-                <View style={styles.checkbox} />
-                <Text style={styles.checklistLabel}>Partida de nacimiento vigente</Text>
-              </View>
-              <View style={styles.checklistItem}>
-                <View style={styles.checkbox} />
-                <Text style={styles.checklistLabel}>Fotocopia partida</Text>
-              </View>
-              <View style={styles.checklistItem}>
-                <View style={styles.checkbox} />
-                <Text style={styles.checklistLabel}>DUI ambos padres</Text>
-              </View>
-              <View style={styles.checklistItem}>
-                <View style={styles.checkbox} />
-                <Text style={styles.checklistLabel}>Fotocopia de dui</Text>
-              </View>
-              <View style={styles.checklistItem}>
-                <View style={styles.checkbox} />
-                <Text style={styles.checklistLabel}>Pasaporte y copia 150%</Text>
-              </View>
+              {REQUISITOS_DOCUMENTACION_MENORES.map((req, idx) => (
+                <View key={idx} style={styles.checklistItem}>
+                  <View style={styles.checkbox} />
+                  <Text style={styles.checklistLabel}>{req}</Text>
+                </View>
+              ))}
             </View>
           ) : (
             <View style={{ marginTop: 10 }}>
               <View style={styles.checklistTitleBox}>
                 <Text style={styles.checklistTitleText}>REQUISITOS PARA MAYORES DE EDAD</Text>
               </View>
-              <View style={styles.checklistItem}>
-                <View style={styles.checkbox} />
-                <Text style={styles.checklistLabel}>Fotocopia dui</Text>
-              </View>
+              {REQUISITOS_DOCUMENTACION_MAYORES.map((req, idx) => (
+                <View key={idx} style={styles.checklistItem}>
+                  <View style={styles.checkbox} />
+                  <Text style={styles.checklistLabel}>{req}</Text>
+                </View>
+              ))}
             </View>
           )}
         </View>

@@ -13,7 +13,7 @@ interface Props {
   errors: Partial<Record<keyof FormData, string>>;
 }
 
-export function Screen3({ data, onChange, errors }: Props) {
+export function PasoEmergenciaSalud({ data, onChange, errors }: Props) {
   const handle = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     onChange(e.target.name as keyof FormData, e.target.value);
 

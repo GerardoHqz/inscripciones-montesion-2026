@@ -1,5 +1,4 @@
-﻿import { Check } from "lucide-react";
-import { STEPS } from "../../types";
+import { Check } from "lucide-react";
 
 interface StepBarProps {
   current: number;

@@ -2,7 +2,7 @@ import { User, Users, AlertCircle, FileText, PenLine } from "lucide-react";
 
 // ─── Roles ─────────────────────────────────────────────────────────────
 
-export type RolUsuario = 'admin' | 'operador' | 'libreria' | 'colaborador' | 'cajero';
+export type RolUsuario = 'admin' | 'operador' | 'cajero' | 'colaborador';
 
 // ─── Registro (Dashboard) ─────────────────────────────────────────────────────
 
@@ -28,11 +28,13 @@ export interface Registro {
   contacto1_relacion: string;
   contacto1_telefono: string;
   contacto1_dui?: string | null;
+  contacto1_dui_vencimiento?: string | null;
   contacto2_nombres: string | null;
   contacto2_apellidos: string | null;
   contacto2_relacion: string | null;
   contacto2_telefono: string | null;
   contacto2_dui?: string | null;
+  contacto2_dui_vencimiento?: string | null;
   emergencia_nombres: string;
   emergencia_apellidos: string;
   emergencia_telefono: string;
@@ -47,6 +49,22 @@ export interface Registro {
   firma_url: string;
   numero_factura: string | null;
   user_ultima_actualizacion?: string | null;
+  cabana_id?: string | null;
+  es_empleado?: boolean | null;
+  es_lider?: boolean | null;
+  es_boanerges?: boolean | null;
+  es_boanergues?: boolean | null;
+  es_exclusion?: boolean | null;
+}
+
+export interface Cabana {
+  id: string;
+  nombre: string;
+  genero: string;
+  capacidad: number;
+  cantidad_lideres: number;
+  bus: string | null;
+  solo_boanerges?: boolean | null;
 }
 
 // ─── FormData (Inscripcion) ───────────────────────────────────────────────────
@@ -71,11 +89,13 @@ export interface FormData {
   contacto1Relacion: string;
   contacto1Telefono: string;
   contacto1Dui: string;
+  contacto1DuiVencimiento: string;
   contacto2Nombres: string;
   contacto2Apellidos: string;
   contacto2Relacion: string;
   contacto2Telefono: string;
   contacto2Dui: string;
+  contacto2DuiVencimiento: string;
   emergenciaNombres: string;
   emergenciaApellidos: string;
   emergenciaTelefono: string;
@@ -93,8 +113,8 @@ export const initialFormData: FormData = {
   primerNombre: "", segundoNombre: "", primerApellido: "", segundoApellido: "", nacionalidad: "",
   fechaNacimiento: "", edad: "", genero: "", tallaCamisa: "", tipoDocumento: "", numeroDocumento: "",
   fechaVencimientoDocumento: "", celular: "", tipoPago: "",
-  contacto1Nombres: "", contacto1Apellidos: "", contacto1Relacion: "", contacto1Telefono: "", contacto1Dui: "",
-  contacto2Nombres: "", contacto2Apellidos: "", contacto2Relacion: "", contacto2Telefono: "", contacto2Dui: "",
+  contacto1Nombres: "", contacto1Apellidos: "", contacto1Relacion: "", contacto1Telefono: "", contacto1Dui: "", contacto1DuiVencimiento: "",
+  contacto2Nombres: "", contacto2Apellidos: "", contacto2Relacion: "", contacto2Telefono: "", contacto2Dui: "", contacto2DuiVencimiento: "",
   emergenciaNombres: "", emergenciaApellidos: "", emergenciaTelefono: "", emergenciaRelacion: "",
   enfermedades: "", tratamientoEnfermedades: "", alergias: "", tratamientoAlergias: "",
   declaranteNombre: "", declaranteDui: "", aceptaTerminos: false,
@@ -112,17 +132,22 @@ export const STEPS = [
 
 export type Step = typeof STEPS[number];
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Constants (Re-exportadas desde utils/constants) ──────────────────────────
 
-export const TALLAS_DISPONIBLES = ["S", "M", "L", "XL", "XXL"] as const;
+export {
+  TALLAS_CAMISA,
+  TALLAS_DISPONIBLES,
+  TIPOS_PAGO,
+  TIPOS_PAGO_OPCIONES,
+  BUSES_OFICIALES,
+  BUSES_CAMPAMENTO,
+  RELACIONES_PARENTESCO,
+  NACIONALIDADES,
+  TERMINOS_Y_CONDICIONES,
+  TERMINOS,
+  REQUISITOS_DOCUMENTACION_MENORES,
+  REQUISITOS_DOCUMENTACION_MAYORES,
+  CONFIG_EVENTO_DEFAULT,
+} from "../utils/constants";
+export type { TallaCamisa, TipoPago, BusOficial } from "../utils/constants";
 
-export const TERMINOS = [
-  "Todo campamentero debera hacerse responsable de sus pertenencias, maleta, dinero y documentacion.",
-  "Todo campamentero debe asistir por voluntad propia, y ser parte de las actividades, juegos, capillas, caminata, etc. que rigen el campamento MONTE SION 2026.",
-  "Ningun campamentero podra regresarse antes de la fecha estipulada, a no ser caso de emergencia y/o emergencia medica y que el medico lo evalue y sea autorizado por los encargados.",
-  "Todo campamentero mayor de edad esta comprometido a respetar a todo menor de edad.",
-  "Todo campamentero esta comprometido a respetar al equipo de trabajo, lideres, companeros de cabana, reglamento del campamento y asi mismo del cuido de las instalaciones.",
-  "La Mision Bautista Internacional no se hara responsable de objetos perdidos.",
-  "Todo campamentero debera llevar sus pertenencias personales segun sea indicado.",
-  "La Mision Bautista Internacional no se hace responsable de fotos y videos compartidos no oficiales del campamento.",
-];

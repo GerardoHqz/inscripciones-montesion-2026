@@ -4,7 +4,7 @@ import { SectionTitle } from "./SectionTitle";
 
 interface Props { onSign: (dataUrl: string | null) => void; error?: string; }
 
-export function Screen5({ onSign, error }: Props) {
+export function PasoFirmaDigital({ onSign, error }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawing = useRef(false);
   const [hasSig, setHasSig] = useState(false);

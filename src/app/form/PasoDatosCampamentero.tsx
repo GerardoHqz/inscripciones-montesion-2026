@@ -11,7 +11,7 @@ interface Props {
   errors: Partial<Record<keyof FormData, string>>;
 }
 
-export function Screen1({ data, onChange, errors }: Props) {
+export function PasoDatosCampamentero({ data, onChange, errors }: Props) {
   const handle = (e: React.ChangeEvent<HTMLInputElement>) =>
     onChange(e.target.name as keyof FormData, e.target.value);
 

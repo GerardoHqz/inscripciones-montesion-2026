@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AlertCircle, Store, CheckCircle2, ArrowRight, Check, Calendar, FileText } from "lucide-react";
+import { useConfiguracionEvento } from "../../hooks/useConfiguracionEvento";
 
 interface Props {
   onStart: () => void;
@@ -7,6 +8,13 @@ interface Props {
 
 export function NotasImportantesScreen({ onStart }: Props) {
   const [accepted, setAccepted] = useState(false);
+  const { config } = useConfiguracionEvento();
+
+  const fechaPartes = config.fechaMinimaVencimientoDocumento.split("-");
+  const fechaFormateada =
+    fechaPartes.length === 3
+      ? `${fechaPartes[2]}/${fechaPartes[1]}/${fechaPartes[0]}`
+      : config.fechaMinimaVencimientoDocumento;
 
   return (
     <div className="space-y-6 py-2 animate-in fade-in slide-in-from-bottom-3 duration-400">
@@ -19,7 +27,7 @@ export function NotasImportantesScreen({ onStart }: Props) {
           Antes de comenzar tu registro
         </h2>
         <p className="text-sm text-muted-foreground max-w-md mx-auto">
-          Por favor lee atentamente la siguiente información sobre el proceso de inscripción para el Campamento Monte Sión 2026.
+          Por favor lee atentamente la siguiente información sobre el proceso de inscripción para el {config.nombreEvento}.
         </p>
       </div>
 
@@ -34,7 +42,7 @@ export function NotasImportantesScreen({ onStart }: Props) {
               Fechas del Campamento
             </h3>
             <p className="text-xs text-emerald-900/90 mt-0.5 leading-relaxed font-medium">
-              El Campamento Monte Sión 2026 se realizará del <strong className="font-extrabold text-emerald-950">23 al 28 de noviembre</strong>.
+              El Campamento {config.nombreEvento} se realizará del <strong className="font-extrabold text-emerald-950">{config.fechasEventoTexto}</strong>.
             </p>
           </div>
         </div>
@@ -49,7 +57,7 @@ export function NotasImportantesScreen({ onStart }: Props) {
               Vigencia Mínima de Documento (DUI / Pasaporte)
             </h3>
             <p className="text-xs text-blue-900/90 mt-0.5 leading-relaxed font-medium">
-              Por regulaciones de viaje, tu DUI o Pasaporte debe contar con al menos <strong className="font-extrabold text-blue-950">6 meses de vigencia</strong> posteriores a la fecha del campamento (debe vencer <strong className="font-extrabold text-blue-950">a partir del 28 de mayo de 2027</strong>).
+              Por regulaciones de viaje, tu DUI o Pasaporte debe contar con al menos <strong className="font-extrabold text-blue-950">{config.mesesVigenciaMinima} meses de vigencia</strong> posteriores a la fecha del campamento (debe vencer <strong className="font-extrabold text-blue-950">a partir del {fechaFormateada}</strong>).
             </p>
           </div>
         </div>
@@ -69,7 +77,7 @@ export function NotasImportantesScreen({ onStart }: Props) {
           </div>
         </div>
 
-        {/* Tarjeta 3: Pago en Taber Store */}
+        {/* Tarjeta 4: Pago */}
         <div className="flex items-start gap-4 p-4 rounded-xl bg-amber-500/5 border border-amber-500/20 shadow-2xs">
           <div className="p-2.5 bg-amber-500/15 text-amber-700 rounded-lg shrink-0 mt-0.5">
             <Store className="w-5 h-5" />
@@ -79,7 +87,7 @@ export function NotasImportantesScreen({ onStart }: Props) {
               Confirmación de Cupo e Inscripción
             </h3>
             <p className="text-xs text-amber-800/90 mt-0.5 leading-relaxed font-medium">
-              Tu cupo e inscripción se asegurará <span className="font-extrabold underline decoration-amber-500/40">únicamente cuando hayas completado tu pago en Taber Store</span>.
+              Tu cupo e inscripción se asegurará <span className="font-extrabold underline decoration-amber-500/40">únicamente cuando hayas completado tu pago en {config.lugarPago}</span>.
             </p>
           </div>
         </div>

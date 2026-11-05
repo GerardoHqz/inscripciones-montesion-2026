@@ -174,7 +174,10 @@ export function PrintArea({ registro: rawRegistro, isPublicForm = false }: Props
                 </div>
                 <div>
                   <span className="text-[9px] uppercase font-bold text-gray-600 block mb-0.5">DOCUMENTO DE IDENTIDAD (DUI/PASAPORTE)</span>
-                  <span className="text-sm font-semibold text-black">{r.contacto1_dui || <span style={{fontStyle:'italic', color:'#9ca3af'}}>Sin registrar</span>}</span>
+                  <span className="text-sm font-semibold text-black">
+                    {r.contacto1_dui || <span style={{fontStyle:'italic', color:'#9ca3af'}}>Sin registrar</span>}
+                    {r.contacto1_dui_vencimiento && ` (Vence: ${r.contacto1_dui_vencimiento})`}
+                  </span>
                 </div>
               </div>
             </div>
@@ -196,7 +199,10 @@ export function PrintArea({ registro: rawRegistro, isPublicForm = false }: Props
                   </div>
                   <div>
                     <span className="text-[9px] uppercase font-bold text-gray-600 block mb-0.5">DOCUMENTO DE IDENTIDAD (DUI/PASAPORTE)</span>
-                    <span className="text-sm font-semibold text-black">{r.contacto2_dui || <span style={{fontStyle:'italic', color:'#9ca3af'}}>Sin registrar</span>}</span>
+                    <span className="text-sm font-semibold text-black">
+                      {r.contacto2_dui || <span style={{fontStyle:'italic', color:'#9ca3af'}}>Sin registrar</span>}
+                      {r.contacto2_dui_vencimiento && ` (Vence: ${r.contacto2_dui_vencimiento})`}
+                    </span>
                   </div>
                 </div>
               ) : (

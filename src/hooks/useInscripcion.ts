@@ -3,10 +3,21 @@ import { sanitizeText, sanitizeOptionalText } from "../utils/sanitize";
 import { supabase } from "../utils/supabase";
 import { FormData, initialFormData, STEPS } from "../types";
 import { nacionalidades, relaciones } from "../utils/constants";
+import { useConfiguracionEvento } from "./useConfiguracionEvento";
 
 type FormErrors = Partial<Record<keyof FormData | "sig", string>>;
 
+/** Helper to parse YYYY-MM-DD strings in local timezone instead of UTC */
+const parseLocalDate = (dateStr: string): Date | null => {
+  if (!dateStr) return null;
+  const parts = dateStr.split("-").map(Number);
+  if (parts.length !== 3 || parts.some(isNaN)) return null;
+  const [y, m, d] = parts;
+  return new Date(y, m - 1, d);
+};
+
 export function useInscripcion() {
+  const { config } = useConfiguracionEvento();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -15,8 +26,9 @@ export function useInscripcion() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const esMayor = parseInt(form.edad, 10) >= 18;
-  const visibleSteps = esMayor ? STEPS.filter((s) => s.id !== 2 && s.id !== 5) : STEPS.filter((s) => s.id !== 5);
+  const esMayor = parseInt(form.edad, 10) >= config.edadMayoriaEdad;
+  const visibleSteps = esMayor ? STEPS.filter((s) => (s.id as number) !== 2) : STEPS;
+
 
   // ── Field setter with phone formatting and age calculation ──────────────────
 
@@ -35,9 +47,10 @@ export function useInscripcion() {
     }
 
     if (k === "fechaNacimiento" && typeof v === "string" && v) {
-      const birthDate = new Date(v);
+      const birthDate = parseLocalDate(v);
       const today = new Date();
-      if (!isNaN(birthDate.getTime()) && birthDate <= today) {
+      today.setHours(0, 0, 0, 0);
+      if (birthDate && birthDate <= today) {
         let age = today.getFullYear() - birthDate.getFullYear();
         const m = today.getMonth() - birthDate.getMonth();
         if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
@@ -65,6 +78,7 @@ export function useInscripcion() {
         const fullCamperName = [nextForm.primerNombre, nextForm.segundoNombre, nextForm.primerApellido, nextForm.segundoApellido]
           .filter(Boolean)
           .join(" ")
+          .replace(/\s+/g, " ")
           .trim();
         nextForm.declaranteNombre = fullCamperName;
         nextForm.declaranteDui = nextForm.numeroDocumento || "";
@@ -73,6 +87,7 @@ export function useInscripcion() {
         const fullContacto1Name = [nextForm.contacto1Nombres, nextForm.contacto1Apellidos]
           .filter(Boolean)
           .join(" ")
+          .replace(/\s+/g, " ")
           .trim();
 
         if (fullContacto1Name) {
@@ -112,6 +127,7 @@ export function useInscripcion() {
   const validateStep = (currentStep: number): boolean => {
     const newErrors: FormErrors = {};
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     if (currentStep === 1) {
       if (!form.primerNombre.trim()) newErrors.primerNombre = "El primer nombre es obligatorio";
@@ -123,13 +139,13 @@ export function useInscripcion() {
         newErrors.nacionalidad = "Debe elegir de la lista";
       }
 
-      if (!form.genero) newErrors.genero = "Seleccione un genero";
+      if (!form.genero) newErrors.genero = "Seleccione un género";
 
       if (!form.fechaNacimiento) {
         newErrors.fechaNacimiento = "La fecha de nacimiento es obligatoria";
       } else {
-        const bd = new Date(form.fechaNacimiento);
-        if (isNaN(bd.getTime())) {
+        const bd = parseLocalDate(form.fechaNacimiento);
+        if (!bd) {
           newErrors.fechaNacimiento = "Fecha inválida";
         } else if (bd > today) {
           newErrors.fechaNacimiento = "La fecha no puede ser futura";
@@ -140,7 +156,9 @@ export function useInscripcion() {
         newErrors.edad = "La edad es obligatoria";
       } else {
         const parsed = parseInt(form.edad, 10);
-        if (isNaN(parsed) || parsed < 10) newErrors.edad = "Debe ser al menos 10 anios";
+        if (isNaN(parsed) || parsed < config.edadMinima) {
+          newErrors.edad = `Debe tener al menos ${config.edadMinima} años de edad`;
+        }
       }
 
       if (!form.tipoDocumento) {
@@ -148,18 +166,20 @@ export function useInscripcion() {
       }
 
       if (!form.numeroDocumento.trim()) {
-        newErrors.numeroDocumento = "El numero de documento es obligatorio";
+        newErrors.numeroDocumento = "El número de documento es obligatorio";
       }
 
       if (!form.fechaVencimientoDocumento) {
         newErrors.fechaVencimientoDocumento = "La fecha de vencimiento es obligatoria";
       } else {
-        const bd = new Date(form.fechaVencimientoDocumento);
-        const minExpiry = new Date("2027-05-28");
-        if (isNaN(bd.getTime())) {
+        const bd = parseLocalDate(form.fechaVencimientoDocumento);
+        const minExpiry = parseLocalDate(config.fechaMinimaVencimientoDocumento);
+        if (!bd) {
           newErrors.fechaVencimientoDocumento = "Fecha inválida";
-        } else if (bd < minExpiry) {
-          newErrors.fechaVencimientoDocumento = "El documento debe tener al menos 6 meses de vigencia (vencer a partir del 28/05/2027)";
+        } else if (minExpiry && bd < minExpiry) {
+          const parts = config.fechaMinimaVencimientoDocumento.split("-");
+          const formatted = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : config.fechaMinimaVencimientoDocumento;
+          newErrors.fechaVencimientoDocumento = `El documento debe tener al menos ${config.mesesVigenciaMinima} meses de vigencia (vencer a partir del ${formatted})`;
         }
       }
 
@@ -167,7 +187,7 @@ export function useInscripcion() {
         newErrors.celular = "El celular es obligatorio";
       } else {
         const digits = form.celular.replace(/[^0-9]/g, "");
-        if (digits.length < 8) newErrors.celular = "Minimo 8 digitos";
+        if (digits.length < 8) newErrors.celular = "Mínimo 8 dígitos";
       }
     }
 
@@ -177,16 +197,16 @@ export function useInscripcion() {
       if (!form.contacto1Apellidos.trim()) newErrors.contacto1Apellidos = "El apellido es obligatorio";
       
       if (!form.contacto1Relacion.trim()) {
-        newErrors.contacto1Relacion = "La relacion es obligatoria";
+        newErrors.contacto1Relacion = "La relación es obligatoria";
       } else if (!relaciones.includes(form.contacto1Relacion)) {
         newErrors.contacto1Relacion = "Debe elegir de la lista";
       }
 
       if (!form.contacto1Telefono.trim()) {
-        newErrors.contacto1Telefono = "El telefono es obligatorio";
+        newErrors.contacto1Telefono = "El teléfono es obligatorio";
       } else {
         const digits = form.contacto1Telefono.replace(/[^0-9]/g, "");
-        if (digits.length < 8) newErrors.contacto1Telefono = "Minimo 8 digitos";
+        if (digits.length < 8) newErrors.contacto1Telefono = "Mínimo 8 dígitos";
       }
 
       if (!form.contacto1Dui.trim()) {
@@ -196,13 +216,23 @@ export function useInscripcion() {
         if (digits.length < 8) newErrors.contacto1Dui = "El DUI debe tener al menos 8-9 dígitos";
       }
 
+      if (!form.contacto1DuiVencimiento) {
+        newErrors.contacto1DuiVencimiento = "La fecha de vencimiento es obligatoria";
+      } else if (form.contacto1DuiVencimiento < "2027-01-01") {
+        newErrors.contacto1DuiVencimiento = "El DUI debe estar vigente y cubrir todo diciembre 2026 (vencer a partir de enero 2027)";
+      }
+
       if (form.contacto2Telefono.trim()) {
         const digits = form.contacto2Telefono.replace(/[^0-9]/g, "");
-        if (digits.length < 8) newErrors.contacto2Telefono = "Minimo 8 digitos";
+        if (digits.length < 8) newErrors.contacto2Telefono = "Mínimo 8 dígitos";
       }
 
       if (form.contacto2Relacion.trim() && !relaciones.includes(form.contacto2Relacion)) {
         newErrors.contacto2Relacion = "Debe elegir de la lista";
+      }
+
+      if (form.contacto2DuiVencimiento && form.contacto2DuiVencimiento < "2027-01-01") {
+        newErrors.contacto2DuiVencimiento = "El DUI debe estar vigente y cubrir todo diciembre 2026 (vencer a partir de enero 2027)";
       }
     }
 
@@ -211,16 +241,16 @@ export function useInscripcion() {
       if (!form.emergenciaApellidos.trim()) newErrors.emergenciaApellidos = "El apellido es obligatorio";
       
       if (!form.emergenciaRelacion.trim()) {
-        newErrors.emergenciaRelacion = "La relacion es obligatoria";
+        newErrors.emergenciaRelacion = "La relación es obligatoria";
       } else if (!relaciones.includes(form.emergenciaRelacion)) {
         newErrors.emergenciaRelacion = "Debe elegir de la lista";
       }
 
       if (!form.emergenciaTelefono.trim()) {
-        newErrors.emergenciaTelefono = "El telefono es obligatorio";
+        newErrors.emergenciaTelefono = "El teléfono es obligatorio";
       } else {
         const digits = form.emergenciaTelefono.replace(/[^0-9]/g, "");
-        if (digits.length < 8) newErrors.emergenciaTelefono = "Minimo 8 digitos";
+        if (digits.length < 8) newErrors.emergenciaTelefono = "Mínimo 8 dígitos";
       }
     }
 
@@ -232,11 +262,11 @@ export function useInscripcion() {
         const digits = form.declaranteDui.replace(/[^0-9]/g, "");
         if (digits.length < 8) newErrors.declaranteDui = "El DUI debe tener al menos 8-9 dígitos";
       }
-      if (!form.aceptaTerminos) newErrors.aceptaTerminos = "Debe aceptar los terminos";
+      if (!form.aceptaTerminos) newErrors.aceptaTerminos = "Debe aceptar los términos y condiciones";
     }
 
     if (currentStep === 5) {
-      if (!sig) newErrors.sig = "La firma es obligatoria para enviar la inscripcion";
+      if (!sig) newErrors.sig = "La firma es obligatoria para enviar la inscripción";
     }
 
     setErrors(newErrors);
@@ -256,11 +286,50 @@ export function useInscripcion() {
     return new Blob([u8arr], { type: mime });
   };
 
+  const checkCuposMenores = async (): Promise<boolean> => {
+    // 1. Conteo directo exacto en la tabla inscripciones
+    const { count, error: countErr } = await supabase
+      .from("inscripciones")
+      .select("id", { count: "exact", head: true })
+      .lt("edad", config.edadMayoriaEdad);
+
+    if (!countErr && count !== null) {
+      return count >= config.cupoMaximoMenores;
+    }
+
+    // 2. Fallback mediante RPC de Supabase
+    try {
+      const { data, error } = await supabase.rpc("obtener_cupos_menores");
+      if (!error && data && data.length > 0) {
+        const row = data[0];
+        if (typeof row.total_menores === "number") return row.total_menores >= config.cupoMaximoMenores;
+        if (typeof row.cupos_disponibles === "number") return row.cupos_disponibles <= 0;
+        if (typeof row.agotado === "boolean") return row.agotado;
+      }
+    } catch (e) {
+      console.warn("RPC obtener_cupos_menores no disponible o falló:", e);
+    }
+
+    return false;
+  };
+
   const handleSubmit = async () => {
     setIsSubmitting(true);
     setSubmitError(null);
 
     try {
+      if (!config.inscripcionesActivas) {
+        throw new Error("⚠️ Las inscripciones se encuentran cerradas en este momento.");
+      }
+
+      const esMenorEdad = parseInt(form.edad, 10) < config.edadMayoriaEdad;
+      if (esMenorEdad) {
+        const estaAgotado = await checkCuposMenores();
+        if (estaAgotado) {
+          throw new Error("⚠️ Cupos para menores de edad agotados");
+        }
+      }
+
       let publicUrl = "";
       let uploadedFileName = "";
       if (sig) {
@@ -286,7 +355,7 @@ export function useInscripcion() {
       const formattedFechaNacimiento = form.fechaNacimiento;
       const formattedFechaVencimiento = form.fechaVencimientoDocumento || null;
 
-      const { error: insertError } = await supabase.from("inscripciones").insert([{
+      const payload: any = {
         primer_nombre: sanitizeText(form.primerNombre),
         segundo_nombre: sanitizeOptionalText(form.segundoNombre),
         primer_apellido: sanitizeText(form.primerApellido),
@@ -307,11 +376,13 @@ export function useInscripcion() {
         contacto1_relacion: esMayor ? "MISMO" : sanitizeText(form.contacto1Relacion),
         contacto1_telefono: esMayor ? sanitizeText(form.celular) : sanitizeText(form.contacto1Telefono),
         contacto1_dui: esMayor ? null : sanitizeOptionalText(form.contacto1Dui),
+        contacto1_dui_vencimiento: esMayor ? null : sanitizeOptionalText(form.contacto1DuiVencimiento),
         contacto2_nombres: esMayor ? null : sanitizeOptionalText(form.contacto2Nombres),
         contacto2_apellidos: esMayor ? null : sanitizeOptionalText(form.contacto2Apellidos),
         contacto2_relacion: esMayor ? null : sanitizeOptionalText(form.contacto2Relacion),
         contacto2_telefono: esMayor ? null : sanitizeOptionalText(form.contacto2Telefono),
         contacto2_dui: esMayor ? null : sanitizeOptionalText(form.contacto2Dui),
+        contacto2_dui_vencimiento: esMayor ? null : sanitizeOptionalText(form.contacto2DuiVencimiento),
         emergencia_nombres: sanitizeText(form.emergenciaNombres),
         emergencia_apellidos: sanitizeText(form.emergenciaApellidos),
         emergencia_telefono: sanitizeText(form.emergenciaTelefono),
@@ -324,7 +395,17 @@ export function useInscripcion() {
         declarante_dui: sanitizeText(form.declaranteDui),
         acepta_terminos: form.aceptaTerminos,
         firma_url: publicUrl,
-      }]);
+      };
+
+      let { error: insertError } = await supabase.from("inscripciones").insert([payload]);
+
+      // Fallback si la base de datos de Supabase aun no tiene las columnas agregadas
+      if (insertError && (insertError.message?.includes("contacto1_dui_vencimiento") || insertError.message?.includes("schema cache"))) {
+        console.warn("Supabase no tiene aún las columnas de vencimiento de DUI, reintentando inserción en modo compatible:", insertError.message);
+        const { contacto1_dui_vencimiento, contacto2_dui_vencimiento, ...fallbackPayload } = payload;
+        const fallbackResult = await supabase.from("inscripciones").insert([fallbackPayload]);
+        insertError = fallbackResult.error;
+      }
 
       if (insertError) {
         if (uploadedFileName) {
@@ -333,13 +414,13 @@ export function useInscripcion() {
         if (insertError.code === "23505" || insertError.message?.includes("duplicate") || insertError.message?.includes("idx_inscripciones_numero_documento")) {
           throw new Error("El número de documento ya está registrado para otra inscripción.");
         }
-        throw new Error(`Error al registrar la inscripcion: ${insertError.message}`);
+        throw new Error(`Error al registrar la inscripción: ${insertError.message}`);
       }
 
       setSubmitted(true);
     } catch (err: any) {
       console.error(err);
-      setSubmitError(err.message || "Ocurrio un error inesperado. Por favor intente de nuevo.");
+      setSubmitError(err.message || "Ocurrió un error inesperado. Por favor intente de nuevo.");
     } finally {
       setIsSubmitting(false);
     }
@@ -354,6 +435,15 @@ export function useInscripcion() {
       setIsSubmitting(true);
       setSubmitError(null);
       try {
+        const esMenorEdad = parseInt(form.edad, 10) < 18;
+        if (esMenorEdad) {
+          const estaAgotado = await checkCuposMenores();
+          if (estaAgotado) {
+            setSubmitError("⚠️ Cupos para menores de edad agotados");
+            return;
+          }
+        }
+
         const { data, error } = await supabase
           .from("inscripciones")
           .select("id")
@@ -371,7 +461,7 @@ export function useInscripcion() {
         }
       } catch (err: any) {
         console.error("Error al verificar documento:", err);
-        setSubmitError("Error al verificar el documento. Por favor, intente de nuevo.");
+        setSubmitError(err.message || "Error al verificar el documento. Por favor, intente de nuevo.");
         return;
       } finally {
         setIsSubmitting(false);
@@ -395,8 +485,9 @@ export function useInscripcion() {
   };
 
   return {
-    step, form, errors, sig, submitted, isSubmitting, submitError,
-    esMayor, visibleSteps,
+    step, form, errors, sig, submitted, isSubmitting, submitError, setSubmitError,
+    esMayor, visibleSteps, config,
     setField, handleSign, next, back,
   };
 }
+

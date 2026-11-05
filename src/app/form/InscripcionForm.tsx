@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
-import { ChevronRight, ChevronLeft, Check, AlertCircle, Loader2 } from "lucide-react";
+import { ChevronRight, ChevronLeft, Check, AlertCircle, AlertTriangle, Loader2 } from "lucide-react";
 import { useInscripcion } from "../../hooks/useInscripcion";
 import { StepBar } from "./StepBar";
 import { SuccessScreen } from "./SuccessScreen";
-import { Screen1 } from "./Screen1";
-import { Screen2 } from "./Screen2";
-import { Screen3 } from "./Screen3";
-import { Screen4 } from "./Screen4";
-import { Screen5 } from "./Screen5";
+import { PasoDatosCampamentero } from "./PasoDatosCampamentero";
+import { PasoContactoPadres } from "./PasoContactoPadres";
+import { PasoEmergenciaSalud } from "./PasoEmergenciaSalud";
+import { PasoTerminosDeclaracion } from "./PasoTerminosDeclaracion";
+import { PasoFirmaDigital } from "./PasoFirmaDigital";
 import { NotasImportantesScreen } from "./NotasImportantesScreen";
 import bannerImg from "../../imports/MONTE WEB-12.png";
 
@@ -22,8 +22,8 @@ const STEP_LABELS = [
 export function InscripcionForm() {
   const [showNotice, setShowNotice] = useState(true);
   const {
-    step, form, errors, sig, submitted, isSubmitting, submitError,
-    esMayor, visibleSteps,
+    step, form, errors, sig, submitted, isSubmitting, submitError, setSubmitError,
+    esMayor, visibleSteps, config,
     setField, handleSign, next, back,
   } = useInscripcion();
 
@@ -62,7 +62,31 @@ export function InscripcionForm() {
             <ChevronLeft className="w-4 h-4" /> Regresar
           </button>
         </div>
-        {submitted ? (
+        {!config.inscripcionesActivas ? (
+          <div className="bg-card rounded-2xl shadow-sm border border-border p-6 sm:p-8 text-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-amber-500/15 text-amber-600 flex items-center justify-center mx-auto">
+              <AlertCircle className="w-8 h-8" />
+            </div>
+            <h2 className="text-xl font-black text-foreground font-['Outfit',sans-serif]">
+              Inscripciones Cerradas
+            </h2>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
+              Las inscripciones para el {config.nombreEvento} se encuentran temporalmente cerradas o han finalizado. Si ya realizaste tu registro, puedes consultar tu asignación de cabaña y transporte.
+            </p>
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  window.history.pushState({}, "", "/consulta");
+                  window.dispatchEvent(new PopStateEvent("popstate"));
+                }}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold shadow-md hover:opacity-90 transition-all cursor-pointer"
+              >
+                Consultar mi Cabaña y Bus
+              </button>
+            </div>
+          </div>
+        ) : submitted ? (
           <div className="bg-card rounded-2xl shadow-sm border border-border p-6 sm:p-8 print:p-0 print:border-none print:shadow-none print:bg-transparent">
             <SuccessScreen data={form} sig={sig} />
           </div>
@@ -86,14 +110,53 @@ export function InscripcionForm() {
             </div>
 
             <div className="min-h-[320px]">
-              {step === 1 && <Screen1 data={form} onChange={setField} errors={errors} />}
-              {step === 2 && <Screen2 data={form} onChange={setField} esMayor={esMayor} errors={errors} />}
-              {step === 3 && <Screen3 data={form} onChange={setField} errors={errors} />}
-              {step === 4 && <Screen4 data={form} onChange={setField} esMayor={esMayor} errors={errors} />}
-              {step === 5 && <Screen5 onSign={handleSign} error={errors.sig} />}
+              {step === 1 && <PasoDatosCampamentero data={form} onChange={setField} errors={errors} />}
+              {step === 2 && <PasoContactoPadres data={form} onChange={setField} esMayor={esMayor} errors={errors} />}
+              {step === 3 && <PasoEmergenciaSalud data={form} onChange={setField} errors={errors} />}
+              {step === 4 && <PasoTerminosDeclaracion data={form} onChange={setField} esMayor={esMayor} errors={errors} />}
+              {step === 5 && <PasoFirmaDigital onSign={handleSign} error={errors.sig} />}
             </div>
 
-            {submitError && (
+            {submitError && submitError.includes("Cupos para menores") && (
+              <div 
+                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200 cursor-pointer"
+                onClick={() => setSubmitError(null)}
+              >
+                <div 
+                  className="bg-card w-full max-w-md rounded-2xl shadow-2xl border border-destructive/30 p-6 sm:p-7 flex flex-col items-center text-center space-y-4 animate-in zoom-in-95 duration-200 cursor-default"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="w-16 h-16 rounded-full bg-destructive/15 text-destructive flex items-center justify-center shadow-inner">
+                    <AlertTriangle className="w-9 h-9" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-black text-foreground font-['Outfit',sans-serif] tracking-tight">
+                      ⚠️ Cupos para menores de edad agotados
+                    </h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      Se ha alcanzado el límite máximo de inscripciones para menores de 18 años.
+                    </p>
+                  </div>
+
+                  <div className="w-full pt-2">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setSubmitError(null);
+                      }}
+                      className="w-full py-3 bg-primary hover:bg-primary/90 active:scale-[0.99] text-primary-foreground font-bold rounded-xl text-sm transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      <span>Entendido</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {submitError && !submitError.includes("Cupos para menores") && (
               <div className="mb-4 p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm flex items-center gap-2.5 animate-in fade-in duration-200">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 <span>{submitError}</span>

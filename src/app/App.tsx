@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
 import DashboardPage from "./dashboard/DashboardPage";
+import DistribucionCabanas from "./cabanas/DistribucionCabanas";
 import { InscripcionForm } from "./form/InscripcionForm";
+import ConsultaPage from "./consulta/ConsultaPage";
 import Home from "./Home";
 import Login from "./Login";
 
@@ -38,6 +40,15 @@ export default function App() {
     }
   }, [path]);
 
+  // Protección de ruta de cabañas (Solo admin)
+  useEffect(() => {
+    if ((path === "/cabanas" || path === "/distribucion-cabanas") && adminUser && adminUser.rol !== "admin") {
+      toast.error("Acceso restringido: El módulo de cabañas es exclusivo para administradores.");
+      window.history.replaceState({}, "", "/home");
+      setPath("/home");
+    }
+  }, [path, adminUser]);
+
   const handleLoginSuccess = (user: AdminUser) => {
     localStorage.setItem("ms_admin_session", JSON.stringify(user));
     setAdminUser(user);
@@ -52,16 +63,33 @@ export default function App() {
     setPath("/login");
   };
 
-  // Rutas públicas explícitas para el formulario
+  // Rutas públicas explícitas para el formulario y consulta de asignación
   const isFormPath = path === "/form" || path === "/inscripcion" || path === "/nueva-inscripcion";
+  const isConsultaPath = path === "/consulta" || path === "/mi-cabana" || path === "/consultar";
 
   return (
     <>
       <Toaster position="top-right" richColors closeButton />
       {isFormPath ? (
         <InscripcionForm />
+      ) : isConsultaPath ? (
+        <ConsultaPage
+          onBack={() => {
+            window.history.pushState({}, "", adminUser ? "/home" : "/login");
+            setPath(adminUser ? "/home" : "/login");
+          }}
+        />
       ) : path === "/dashboard" && adminUser ? (
         <DashboardPage onLogout={handleLogout} adminUser={adminUser} />
+      ) : (path === "/cabanas" || path === "/distribucion-cabanas") && adminUser && adminUser.rol === "admin" ? (
+        <DistribucionCabanas
+          onBack={() => {
+            window.history.pushState({}, "", "/home");
+            setPath("/home");
+          }}
+          onLogout={handleLogout}
+          adminUser={adminUser}
+        />
       ) : adminUser ? (
         <Home onLogout={handleLogout} adminUser={adminUser} />
       ) : (

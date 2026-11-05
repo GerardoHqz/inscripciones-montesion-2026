@@ -2,13 +2,13 @@ import { useState, useEffect } from "react";
 import { ChevronLeft, RefreshCw, LogOut, Download, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import { useRegistros } from "../../hooks/useRegistros";
+import { useConfiguracionEvento } from "../../hooks/useConfiguracionEvento";
 import { MetricCards } from "./MetricCards";
 import { FilterBar } from "./FilterBar";
 import { RegistrosTable } from "./RegistrosTable";
 import { RegistroModal } from "./RegistroModal";
 import { PrintArea } from "./PrintArea";
 import { AdminUser } from "../App";
-import logoImg from "../../imports/MONTE WEB-13.png";
 import * as XLSX from "xlsx";
 import { Registro } from "../../types";
 
@@ -17,7 +17,42 @@ interface DashboardProps {
   adminUser: AdminUser;
 }
 
+function normalizarTexto(str: string): string {
+  return (str || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Remueve tildes y acentos
+    .trim();
+}
+
+function registroCoincideConBusqueda(reg: Registro, query: string): boolean {
+  const q = normalizarTexto(query);
+  if (!q) return true;
+
+  // Separar la consulta en tokens/palabras independientes
+  const tokens = q.split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) return true;
+
+  const nombresYApellidos = `${reg.primer_nombre || ""} ${reg.segundo_nombre || ""} ${reg.primer_apellido || ""} ${reg.segundo_apellido || ""}`;
+  const textoCompleto = normalizarTexto(`${nombresYApellidos} ${reg.numero_documento || ""} ${reg.celular || ""}`);
+
+  const docLimpio = (reg.numero_documento || "").replace(/[^0-9a-z]/gi, "").toLowerCase();
+  const telLimpio = (reg.celular || "").replace(/[^0-9]/gi, "");
+
+  return tokens.every((token) => {
+    const tokenLimpio = token.replace(/[^0-9a-z]/gi, "").toLowerCase();
+    const tokenNum = token.replace(/[^0-9]/gi, "");
+
+    const coincideTexto = textoCompleto.includes(token);
+    const coincideDoc = tokenLimpio.length >= 3 && docLimpio.includes(tokenLimpio);
+    const coincideTel = tokenNum.length >= 4 && telLimpio.includes(tokenNum);
+
+    return coincideTexto || coincideDoc || coincideTel;
+  });
+}
+
 export default function DashboardPage({ onLogout, adminUser }: DashboardProps) {
+  const { config } = useConfiguracionEvento();
   const {
     registros, loading, error, fetchRegistros,
     selected, setSelected,
@@ -38,6 +73,7 @@ export default function DashboardPage({ onLogout, adminUser }: DashboardProps) {
   const [filtroGenero, setFiltroGenero] = useState("todos");
   const [filtroEdad, setFiltroEdad] = useState("todos");
   const [filtroTalla, setFiltroTalla] = useState("todos");
+  const [filtroEquipo, setFiltroEquipo] = useState("todos");
 
   // Navegar al home verificando que la sesión sigue activa
   const goHome = () => {
@@ -54,14 +90,19 @@ export default function DashboardPage({ onLogout, adminUser }: DashboardProps) {
   };
  
   const cumpleFiltrosFiltroBar = (reg: Registro) => {
-    const nombre = `${reg.primer_nombre} ${reg.segundo_nombre || ""} ${reg.primer_apellido} ${reg.segundo_apellido || ""}`.toLowerCase();
-    const q = search.toLowerCase();
-    const matchSearch = !q || nombre.includes(q) || reg.numero_documento.toLowerCase().includes(q) || reg.celular.includes(q);
+    const matchSearch = registroCoincideConBusqueda(reg, search);
     const matchPago = filtroPago === "todos" || reg.tipo_pago === filtroPago;
     const matchGenero = filtroGenero === "todos" || reg.genero === filtroGenero;
     const matchEdad = filtroEdad === "todos" ? true : filtroEdad === "menores" ? reg.edad < 18 : reg.edad >= 18;
     const matchTalla = filtroTalla === "todos" || (reg.talla_camisa || "").trim().toUpperCase() === filtroTalla.toUpperCase();
-    return matchSearch && matchPago && matchGenero && matchEdad && matchTalla;
+    const matchEquipo = filtroEquipo === "todos" 
+      ? true 
+      : filtroEquipo === "campamenteros" 
+      ? !reg.es_empleado 
+      : filtroEquipo === "equipo" 
+      ? Boolean(reg.es_empleado) 
+      : true;
+    return matchSearch && matchPago && matchGenero && matchEdad && matchTalla && matchEquipo;
   };
 
   const cantActivasFiltradas = registros.filter((r) => r.tipo_pago !== null && cumpleFiltrosFiltroBar(r)).length;
@@ -98,11 +139,13 @@ export default function DashboardPage({ onLogout, adminUser }: DashboardProps) {
       "Contacto 1 Relación": reg.contacto1_relacion,
       "Contacto 1 Teléfono": reg.contacto1_telefono,
       "Contacto 1 DUI": reg.contacto1_dui || "",
+      "Contacto 1 Vencimiento DUI": reg.contacto1_dui_vencimiento || "",
       "Contacto 2 Nombres": reg.contacto2_nombres || "",
       "Contacto 2 Apellidos": reg.contacto2_apellidos || "",
       "Contacto 2 Relación": reg.contacto2_relacion || "",
       "Contacto 2 Teléfono": reg.contacto2_telefono || "",
       "Contacto 2 DUI": reg.contacto2_dui || "",
+      "Contacto 2 Vencimiento DUI": reg.contacto2_dui_vencimiento || "",
       "Emergencia Nombres": reg.emergencia_nombres,
       "Emergencia Apellidos": reg.emergencia_apellidos,
       "Emergencia Relación": reg.emergencia_relacion,
@@ -116,13 +159,18 @@ export default function DashboardPage({ onLogout, adminUser }: DashboardProps) {
       "Acepta Términos": reg.acepta_terminos ? "Sí" : "No",
       "Firma URL": reg.firma_url,
       "Número Factura": reg.numero_factura || "",
+      "Equipo de Trabajo": reg.es_empleado ? "Sí" : "No",
+      "Líder": reg.es_lider ? "Sí" : "No",
+      "Boanerges": (reg.es_boanerges ?? reg.es_boanergues) ? "Sí" : "No",
+      "Exclusión Cabaña": reg.es_exclusion ? "Sí" : "No",
       "Usuario Actualización": reg.user_ultima_actualizacion || ""
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Inscripciones Activas");
-    XLSX.writeFile(workbook, "Inscripciones_Activas_Completo_2026.xlsx");
+    const safeName = config.nombreEvento.replace(/\s+/g, "_");
+    XLSX.writeFile(workbook, `Inscripciones_Activas_Completo_${safeName}.xlsx`);
   };
 
   const handleDownloadMigration = () => {
@@ -154,7 +202,8 @@ export default function DashboardPage({ onLogout, adminUser }: DashboardProps) {
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Migración");
-    XLSX.writeFile(workbook, "Inscripciones_Activas_Migracion_2026.xlsx");
+    const safeName = config.nombreEvento.replace(/\s+/g, "_");
+    XLSX.writeFile(workbook, `Inscripciones_Activas_Migracion_${safeName}.xlsx`);
   };
 
   if (loading) {
@@ -210,7 +259,7 @@ export default function DashboardPage({ onLogout, adminUser }: DashboardProps) {
             </button>
             <div>
               <h1 className="text-xl font-bold tracking-wide font-['Outfit',sans-serif]">Panel de Inscripciones</h1>
-              <p className="text-xs opacity-75 uppercase tracking-wider font-semibold">Monte Sion 2026 - Taber x Jev</p>
+              <p className="text-xs opacity-75 uppercase tracking-wider font-semibold">{config.nombreEvento} - Taber x Jev</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -240,6 +289,7 @@ export default function DashboardPage({ onLogout, adminUser }: DashboardProps) {
           filtroGenero={filtroGenero} setFiltroGenero={setFiltroGenero}
           filtroEdad={filtroEdad} setFiltroEdad={setFiltroEdad}
           filtroTalla={filtroTalla} setFiltroTalla={setFiltroTalla}
+          filtroEquipo={filtroEquipo} setFiltroEquipo={setFiltroEquipo}
         />
 
         {/* Pestañas de Navegación del Dashboard y Botones de Descarga */}

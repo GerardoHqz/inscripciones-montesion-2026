@@ -1,5 +1,5 @@
 import { Search } from "lucide-react";
-import { TALLAS_DISPONIBLES } from "../../types";
+import { TALLAS_DISPONIBLES, TIPOS_PAGO_OPCIONES } from "../../utils/constants";
 
 interface Props {
   search: string; setSearch: (v: string) => void;
@@ -7,11 +7,19 @@ interface Props {
   filtroGenero: string; setFiltroGenero: (v: string) => void;
   filtroEdad: string; setFiltroEdad: (v: string) => void;
   filtroTalla: string; setFiltroTalla: (v: string) => void;
+  filtroEquipo?: string; setFiltroEquipo?: (v: string) => void;
 }
 
 const selectClass = "px-3 py-1.5 border border-border rounded-lg bg-input-background text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40";
 
-export function FilterBar({ search, setSearch, filtroPago, setFiltroPago, filtroGenero, setFiltroGenero, filtroEdad, setFiltroEdad, filtroTalla, setFiltroTalla }: Props) {
+export function FilterBar({ 
+  search, setSearch, 
+  filtroPago, setFiltroPago, 
+  filtroGenero, setFiltroGenero, 
+  filtroEdad, setFiltroEdad, 
+  filtroTalla, setFiltroTalla,
+  filtroEquipo, setFiltroEquipo 
+}: Props) {
   return (
     <section className="bg-white p-4 rounded-xl border border-[#e5e7eb] shadow-sm mb-6 flex flex-col lg:flex-row gap-4 items-center justify-between">
       <div className="relative w-full lg:max-w-xs">
@@ -28,10 +36,11 @@ export function FilterBar({ search, setSearch, filtroPago, setFiltroPago, filtro
           <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Pago:</span>
           <select value={filtroPago} onChange={(e) => setFiltroPago(e.target.value)} className={selectClass}>
             <option value="todos">Todos</option>
-            <option value="completo">Completo</option>
-            <option value="medio pago">Medio Pago</option>
-            <option value="media beca">Media Beca</option>
-            <option value="becado">Becado</option>
+            {TIPOS_PAGO_OPCIONES.map((opc) => (
+              <option key={opc.valor} value={opc.valor}>
+                {opc.etiqueta}
+              </option>
+            ))}
           </select>
         </div>
         <div className="flex items-center gap-2">
@@ -57,6 +66,16 @@ export function FilterBar({ search, setSearch, filtroPago, setFiltroPago, filtro
             {TALLAS_DISPONIBLES.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
         </div>
+        {filtroEquipo !== undefined && setFiltroEquipo && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Equipo:</span>
+            <select value={filtroEquipo} onChange={(e) => setFiltroEquipo(e.target.value)} className={selectClass}>
+              <option value="todos">Todos</option>
+              <option value="campamenteros">Solo Campamenteros</option>
+              <option value="equipo">Solo Equipo</option>
+            </select>
+          </div>
+        )}
       </div>
     </section>
   );

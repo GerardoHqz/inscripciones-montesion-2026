@@ -4,6 +4,15 @@ import { toast } from "sonner";
 import { supabase } from "../utils/supabase";
 import { Registro } from "../types";
 
+/** Helper to parse YYYY-MM-DD strings in local timezone instead of UTC */
+const parseLocalDate = (dateStr: string): Date | null => {
+  if (!dateStr) return null;
+  const parts = dateStr.split("-").map(Number);
+  if (parts.length !== 3 || parts.some(isNaN)) return null;
+  const [y, m, d] = parts;
+  return new Date(y, m - 1, d);
+};
+
 export function useRegistros(token: string | undefined) {
   const [registros, setRegistros] = useState<Registro[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,18 +33,21 @@ export function useRegistros(token: string | undefined) {
     setLoading(true);
     setError(null);
     try {
-      const { data, error: err } = await supabase
-        .rpc("obtener_inscripciones_seguras", { p_token: token });
-      if (err) {
-        console.warn("RPC obtener_inscripciones_seguras falló, intentando consulta directa:", err.message);
-        const { data: directData, error: directErr } = await supabase
-          .from("inscripciones")
-          .select("*")
-          .order("created_at", { ascending: false });
-        if (directErr) throw err;
-        setRegistros(directData || []);
+      // 1. Intentar consulta directa para asegurar todas las columnas nuevas (es_empleado, etc.)
+      const { data: directData, error: directErr } = await supabase
+        .from("inscripciones")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (!directErr && directData) {
+        setRegistros(directData);
         return;
       }
+
+      // 2. Fallback a la función RPC si la consulta directa falla
+      const { data, error: err } = await supabase
+        .rpc("obtener_inscripciones_seguras", { p_token: token });
+      if (err) throw err;
       setRegistros(data || []);
     } catch (err: any) {
       console.error(err);
@@ -61,9 +73,10 @@ export function useRegistros(token: string | undefined) {
     }
 
     if (field === "fecha_nacimiento" && typeof value === "string" && value) {
-      const birthDate = new Date(value);
+      const birthDate = parseLocalDate(value);
       const today = new Date();
-      if (!isNaN(birthDate.getTime()) && birthDate <= today) {
+      today.setHours(0, 0, 0, 0);
+      if (birthDate && birthDate <= today) {
         let age = today.getFullYear() - birthDate.getFullYear();
         const m = today.getMonth() - birthDate.getMonth();
         if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
@@ -98,9 +111,9 @@ export function useRegistros(token: string | undefined) {
       fail("La fecha de vencimiento del documento es obligatoria.");
       return;
     } else {
-      const expiry = new Date(editForm.fecha_vencimiento_documento);
-      const minExpiry = new Date("2027-05-28");
-      if (isNaN(expiry.getTime()) || expiry < minExpiry) {
+      const expiry = parseLocalDate(editForm.fecha_vencimiento_documento);
+      const minExpiry = parseLocalDate("2027-05-28");
+      if (!expiry || (minExpiry && expiry < minExpiry)) {
         fail("El documento debe tener al menos 6 meses de vigencia (vencer a partir del 28/05/2027).");
         return;
       }
@@ -130,11 +143,13 @@ export function useRegistros(token: string | undefined) {
       contacto1_relacion: sanitizeText(editForm.contacto1_relacion),
       contacto1_telefono: sanitizeText(editForm.contacto1_telefono),
       contacto1_dui: sanitizeOptionalText(editForm.contacto1_dui),
+      contacto1_dui_vencimiento: editForm.contacto1_dui_vencimiento || null,
       contacto2_nombres: sanitizeOptionalText(editForm.contacto2_nombres),
       contacto2_apellidos: sanitizeOptionalText(editForm.contacto2_apellidos),
       contacto2_relacion: sanitizeOptionalText(editForm.contacto2_relacion),
       contacto2_telefono: sanitizeOptionalText(editForm.contacto2_telefono),
       contacto2_dui: sanitizeOptionalText(editForm.contacto2_dui),
+      contacto2_dui_vencimiento: editForm.contacto2_dui_vencimiento || null,
       emergencia_nombres: sanitizeText(editForm.emergencia_nombres),
       emergencia_apellidos: sanitizeText(editForm.emergencia_apellidos),
       emergencia_telefono: sanitizeText(editForm.emergencia_telefono),
@@ -146,31 +161,37 @@ export function useRegistros(token: string | undefined) {
       declarante_nombre: sanitizeText(editForm.declarante_nombre),
       declarante_dui: sanitizeText(editForm.declarante_dui),
       numero_factura: sanitizeOptionalText(editForm.numero_factura),
+      es_empleado: editForm.es_empleado !== undefined ? Boolean(editForm.es_empleado) : Boolean(selected.es_empleado),
+      es_lider: editForm.es_lider !== undefined ? Boolean(editForm.es_lider) : Boolean(selected.es_lider),
+      es_boanerges: editForm.es_boanerges !== undefined 
+        ? Boolean(editForm.es_boanerges) 
+        : Boolean(selected.es_boanerges),
+      es_exclusion: editForm.es_exclusion !== undefined ? Boolean(editForm.es_exclusion) : Boolean(selected.es_exclusion),
     };
 
     try {
-      // 1. Intentar guardar mediante la función RPC segura
-      const { error: rpcErr } = await supabase
-        .rpc("guardar_edicion_segura", {
-          p_token: token,
-          p_id: selected.id,
-          p_datos: pDatos
-        });
+      // 1. Intentar guardar directamente en la tabla inscripciones (para incluir todos los campos nuevos)
+      const { error: directErr } = await supabase
+        .from("inscripciones")
+        .update(pDatos)
+        .eq("id", selected.id);
 
-      if (rpcErr) {
-        console.warn("RPC guardar_edicion_segura falló, intentando actualización directa en tabla:", rpcErr.message);
+      if (directErr) {
+        console.warn("Actualización directa falló, intentando RPC:", directErr.message);
         
-        // 2. Fallback a actualización directa en la tabla inscripciones
-        const { error: directErr } = await supabase
-          .from("inscripciones")
-          .update(pDatos)
-          .eq("id", selected.id);
+        // 2. Intentar mediante la función RPC segura
+        const { error: rpcErr } = await supabase
+          .rpc("guardar_edicion_segura", {
+            p_token: token,
+            p_id: selected.id,
+            p_datos: pDatos
+          });
 
-        if (directErr) {
-          console.warn("Actualización directa falló, intentando sin columnas opcionales adicionales:", directErr.message);
+        if (rpcErr) {
+          console.warn("RPC guardar_edicion_segura falló, intentando sin columnas opcionales adicionales:", rpcErr.message);
           
           // 3. Fallback de seguridad eliminando columnas que podrían no existir aún en la BD del cliente
-          const { contacto1_dui, contacto2_dui, numero_factura, ...legacyDatos } = pDatos as any;
+          const { contacto1_dui, contacto1_dui_vencimiento, contacto2_dui, contacto2_dui_vencimiento, numero_factura, ...legacyDatos } = pDatos as any;
           const { error: legacyErr } = await supabase
             .from("inscripciones")
             .update(legacyDatos)
@@ -195,60 +216,74 @@ export function useRegistros(token: string | undefined) {
     }
   };
 
-  const confirmarPago = async (id: string, tipoPago: 'completo' | 'medio pago' | 'media beca' | 'becado', numeroFactura: string) => {
+  const confirmarPago = async (
+    id: string,
+    tipoPago: 'completo' | 'medio pago' | 'media beca' | 'becado',
+    numeroFactura: string,
+    opciones?: {
+      es_empleado?: boolean;
+      es_lider?: boolean;
+      es_boanerges?: boolean;
+      es_exclusion?: boolean;
+    } | boolean
+  ) => {
     if (!numeroFactura.trim()) {
       throw new Error("El número de factura es obligatorio.");
     }
 
     const facturaClean = numeroFactura.trim();
+    const flagsObj = typeof opciones === "boolean" 
+      ? { es_empleado: opciones } 
+      : (opciones || {});
 
-    // 1. Intentar RPC
-    const { error: rpcErr } = await supabase
-      .rpc("confirmar_pago_seguro", {
-        p_token: token,
-        p_id: id,
-        p_tipo_pago: tipoPago,
-        p_numero_factura: facturaClean
-      });
+    const esBoanergesVal = Boolean(flagsObj.es_boanerges ?? (flagsObj as any).es_boanergues);
 
-    if (rpcErr) {
-      console.warn("RPC confirmar_pago_seguro falló, intentando actualización directa:", rpcErr.message);
-      
-      // 2. Fallback directo a tabla
-      const { error: directErr } = await supabase
-        .from("inscripciones")
-        .update({
-          tipo_pago: tipoPago,
-          numero_factura: facturaClean
-        })
-        .eq("id", id);
+    // Asegurar que enviamos únicamente columnas existentes en la tabla inscripciones
+    const updateData = {
+      tipo_pago: tipoPago,
+      numero_factura: facturaClean,
+      es_empleado: Boolean(flagsObj.es_empleado),
+      es_lider: Boolean(flagsObj.es_lider),
+      es_boanerges: esBoanergesVal,
+      es_exclusion: Boolean(flagsObj.es_exclusion)
+    };
 
-      if (directErr) {
-        // 3. Fallback sin numero_factura si la columna aún no existiera
-        const { error: legacyErr } = await supabase
-          .from("inscripciones")
-          .update({ tipo_pago: tipoPago })
-          .eq("id", id);
+    const { error: directErr } = await supabase
+      .from("inscripciones")
+      .update(updateData)
+      .eq("id", id);
 
-        if (legacyErr) {
-          throw new Error(legacyErr.message || directErr.message || rpcErr.message);
-        }
+    if (directErr) {
+      console.warn("Actualización directa falló, intentando RPC:", directErr.message);
+
+      // Si falla, intentar RPC
+      const { error: rpcErr } = await supabase
+        .rpc("confirmar_pago_seguro", {
+          p_token: token,
+          p_id: id,
+          p_tipo_pago: tipoPago,
+          p_numero_factura: facturaClean,
+          p_es_empleado: flagsObj.es_empleado ?? false
+        });
+
+      if (rpcErr) {
+        throw new Error(directErr.message || rpcErr.message);
       }
     }
 
     setRegistros((prev) =>
       prev.map((r) =>
         r.id === id
-          ? { ...r, tipo_pago: tipoPago, numero_factura: facturaClean }
+          ? { ...r, ...updateData }
           : r
       )
     );
     setSelected((prev) =>
       prev && prev.id === id
-        ? { ...prev, tipo_pago: tipoPago, numero_factura: facturaClean }
+        ? { ...prev, ...updateData }
         : prev
     );
-    toast.success("¡Pago e inscripción registrados con éxito!");
+    toast.success("Pago y distintivos guardados exitosamente.");
   };
 
   return {
